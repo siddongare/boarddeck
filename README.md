@@ -1,54 +1,83 @@
-<p align="left">
-  <img src="assets/logo.svg" alt="HSC CS logo" width="44" height="44" />
+<p align="center">
+  <img src="assets/logo.svg" width="56" height="56" alt="BoardDeck logo" />
 </p>
 
-# HSC CS (Class 12 CS1 & CS2)
+<h1 align="center">BoardDeck · HSC Class 12</h1>
 
-**[hsc-cs.vercel.app](https://hsc-cs.vercel.app)**
+<p align="center">
+  Maharashtra HSC (MSBSHSE) board PYQ workspace for <strong>Computer Science (D-9)</strong> and <strong>Electronics (C-2)</strong>.<br />
+  <a href="https://hsc-cs.vercel.app"><strong>hsc-cs.vercel.app</strong></a>
+</p>
 
-I built this because I have JEE in January and Maharashtra HSC boards in February, and digging through 24 separate board PDFs was wasting too much time.
+---
 
-Every question from the 2015–2026 HSC Computer Science Paper I and Paper II board exams (963 questions across 24 papers) is sorted here by syllabus chapter and paper format, with answers hidden by default so you actually test yourself instead of passively reading solutions.
+## Why I built this
 
-## Screenshots
+Most HSC board prep tools dump unorganized PDFs or force CS and Electronics students onto mixed pages. During Class 12 prep (especially while juggling JEE or CET), you do not have time to guess which chapters actually fill `Q.2(B)`, `Q.4(B)`, or `Q.5`.
 
-| Overview & Skip Matrix | Chapter Active Recall |
-| --- | --- |
-| ![Overview](assets/overview.png) | ![Chapter Drill](assets/chapter-drill.png) |
+**BoardDeck** separates each subject into its own isolated workspace—chapters, paper-slot strategies, repeat frequencies, timed mock papers, review queues, and personal notebook notes stay strictly scoped per stream.
 
-## What it does
+---
 
-- **Chapter-wise & paper-format order:** Each chapter starts with MCQs (1M), then 1–2M short answers, 3M theory/diagrams, 4M algorithms, and ends with 5M C++, HTML, and 8085 Assembly coding questions.
-- **Repeat frequency flags:** Clusters near-identical questions and concept variants across years (`Asked 4×`, etc.) so you can filter down to high-yield repeats first.
-- **Interactive MCQs + hidden answers:** Click an option (`1`–`4`) to check it immediately, or hit `R` to reveal the answer for theory and code questions.
-- **Mock full papers:** Pick any of the 24 papers (`2015 March` – `2026 March`) in original `Q.1` to `Q.5` order with a 3-hour timer. Mock mode stays isolated from your chapter progress so MCQs and answers start blank.
-- **Own notes & photos:** Add your own concise board-style text answer or attach a photo of your handwritten notes on any question. Everything saves locally in `localStorage` with JSON Backup/Restore.
-- **2011–2014 archive:** Direct links to the 7 older papers that are only available as scanned images.
+## Covered Subjects (1,219 Questions Total)
 
-## Keyboard shortcuts
+### Computer Science · Code D-9 (`963` Questions · `24` Papers)
+- **Coverage:** 2015–2026 March & July CS1 & CS2 papers sourced from Shaalaa, plus links to 2011–2014 scanned papers.
+- **CS1 Chapters:** Operating System, Data Structures, C++ Programming, HTML (Web Designing).
+- **CS2 Chapters:** 8085 Microprocessor Org, 8085 Instruction Set & ALP, Intel x86 Family, 8051 Microcontroller, Networking Technology.
+- **Slot Edge:** `Q.5` (10M compulsory out of 15M) has always been 2 C++ programs + 1 HTML page (`45` C++ and `24` HTML across 12 CS1 papers). In CS2, `71/72` Q.5 questions are 8085 Assembly programs.
 
-- `J` / `K` — next / previous question
-- `1`–`4` — pick MCQ option
-- `R` — reveal / hide answer
-- `M` — mark mastered
-- `F` — flag for review queue
+### Electronics · Code C-2 (`256` Questions · `8` Papers)
+- **Coverage:** 2020 March (`V-233` / `V-267`), 2023 March (`V-553` / `V-587`), 2025 March (`V-53` / `V-87`), and 2026 March (`V-733` / `V-767`) sourced from official MSBSHSE PDFs via AglaSem, Zollege, Collegedunia, TechNiyojan, and Vidyasagar Academy (Shaalaa currently hosts syllabus only for Electronics).
+- **Paper I (Applied Electronics):** Instruments, DC Power Supplies, Transducers & Sensors, Operational Amplifiers, Modern Comm. Systems, Integrated Circuits (555).
+- **Paper II (Digital Electronics):** Number Systems, Logic Gates & Boolean Algebra, Logic Families, Combinational Circuits, Flip-Flops & Counters, A/D & D/A Converters, Computer Fundamentals.
+- **Slot Edge:** In Paper I, Operational Amplifiers appeared in `4/4` indexed papers in both `Q.2(B)` and `Q.4(B)` 4M blocks. In Paper II, Flip-Flops + Combinational Circuits (MUX/DEMUX) + ADC/DAC dominate `Q.5(A)` and `Q.5(B)`.
 
-## Notes on the data
+---
 
-- Questions, diagrams, and reference explanations were collected from [Shaalaa](https://www.shaalaa.com/course/maharashtra-board-12th-standard-board-exam-hsc-science-computer-science_585).
-- Some older Shaalaa solutions are longer than what HSC examiners expect or omit marks-specific formatting. Use the `+ My Answer / Photo` button on those cards to keep your own crisp points.
-- 14 of the 963 questions have blank solution text on Shaalaa and link directly to the source page.
+## Features
 
-## Run locally
+- **Strict Subject Isolation:** Pick CS or Electronics on the landing page. Switching streams never bleeds filters, chapters, mock dropdowns, or review queues.
+- **Interactive Active Recall:** MCQs let you guess first before grading; derivations and circuit answers stay collapsed behind a reveal toggle (`R`).
+- **Repeat Detection (`Asked Nx`):** Conceptually matching questions across distinct exam years are clustered so high-frequency patterns sort first.
+- **Isolated Mock Mode:** Timed 3-hour full board papers sorted strictly `Q.1 -> Q.5` without leaking chapter mastery.
+- **Personal Notes & Photo Uploads:** Save concise board answers or notebook photos right inside any card (`localStorage`), with JSON backup/restore.
 
-It is a single static `index.html` file with no build step:
+<p align="center">
+  <img src="assets/home.png" width="49%" alt="BoardDeck Subject Picker" />
+  <img src="assets/overview.png" width="49%" alt="Electronics Workspace & Slot Matrix" />
+</p>
+
+<p align="center">
+  <img src="assets/chapter-drill.png" width="72%" alt="Electronics Op-Amps Active Recall View" />
+</p>
+
+---
+
+## Keyboard Shortcuts
+
+- `J` / `K` — Next / previous question
+- `R` — Reveal / hide solution
+- `1`–`4` — Pick MCQ option
+- `M` — Mark Mastered
+- `F` — Flag for Review Queue
+
+---
+
+## Local Setup
+
+Static single-page build (`index.html`, zero runtime dependencies):
 
 ```bash
 git clone https://github.com/siddongare/hsc-cs.git
 cd hsc-cs
-# open index.html in any browser
+python -m http.server 8000
 ```
 
-## License
+Then open `http://localhost:8000`. Progress stays in browser `localStorage` under `boarddeck_hsc_v1` (existing `hsc_cs_trainer_v3`/`v2` saves migrate automatically).
 
-MIT for the web app shell ([LICENSE](LICENSE)). Question papers belong to MSBSHSE and reference explanations belong to their respective authors on Shaalaa.
+---
+
+## Attribution & License
+
+Question text, schematics, and solution references belong to MSBSHSE and their respective open archives (Shaalaa, AglaSem, Zollege, Collegedunia, TechNiyojan, and Vidyasagar Academy). Built purely as a personal non-commercial revision workspace. Code licensed under the [MIT License](LICENSE).
