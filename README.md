@@ -19,7 +19,7 @@ Datasets lazy-load on demand per subject from `data/<stream>.json`, while `data/
 
 ## Previews
 
-| Home & Subject Switcher | Overview & Slot Strategy | Chapter Drill (`\ce{}` & Solutions) |
+| Home & Subject Switcher | Overview & Slot Strategy | Chapter Drill (MathJax & Solutions) |
 | --- | --- | --- |
 | ![Home](assets/home.png) | ![Overview](assets/overview.png) | ![Chapter Drill](assets/chapter-drill.png) |
 
@@ -54,7 +54,8 @@ Then visit `http://localhost:8000/`.
 .
 ├── assets/
 │   ├── app.js           # Client state, lazy JSON loader, filters, mock engine, sync hooks
-│   ├── styles.css         # Dark/light theme tokens, layout grids, responsive drawer, motion
+│   ├── liquidGL.js      # Lazy-loaded desktop-only WebGL/WebGPU header refractor (0 mobile overhead)
+│   ├── styles.css         # Dark/light theme tokens, Cerulean accents, glass header, responsive drawer
 │   ├── supa-env.js        # Public Supabase endpoint stub (updated on Vercel build)
 │   └── sync.js            # Supabase Auth, timestamped merge, debounced cloud push
 ├── data/

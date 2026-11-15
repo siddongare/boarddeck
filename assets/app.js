@@ -27,21 +27,21 @@
       id: 'phy',
       tab: 'Physics Q.1',
       tag: '2026 March · Rotational · 1M',
-      isMath: true,
-      prompt: 'The kinetic energy of a rotating body of moment of inertia `I` and angular velocity `omega` is:',
-      options: ['`1/2 I omega`', '`1/2 I omega^2`', '`I omega^2`', '`2 I omega^2`'],
+      isMath: false,
+      prompt: 'The kinetic energy of a rotating body of moment of inertia <i>I</i> and angular velocity &omega; is:',
+      options: ['&frac12; <i>I</i>&omega;', '&frac12; <i>I</i>&omega;&sup2;', '<i>I</i>&omega;&sup2;', '2<i>I</i>&omega;&sup2;'],
       correct: 1,
-      explain: 'Rotational kinetic energy is `K = 1/2 I omega^2`, analogous to translational `1/2 m v^2`.'
+      explain: 'Rotational kinetic energy is <i>K</i> = &frac12; <i>I</i>&omega;&sup2;, analogous to translational &frac12; <i>mv</i>&sup2;.'
     },
     {
       id: 'chem',
       tab: 'Chemistry',
       tag: '2025 March · Thermodynamics · 1M',
-      isMath: true,
+      isMath: false,
       prompt: 'For an isothermal reversible expansion of 1 mole of an ideal gas, which quantity equals zero?',
-      options: ['`Delta U`', '`W`', '`q`', '`Delta S`'],
+      options: ['&Delta;<i>U</i>', '<i>W</i>', '<i>q</i>', '&Delta;<i>S</i>'],
       correct: 0,
-      explain: 'In an isothermal process on an ideal gas, `Delta T = 0`, so internal energy change `Delta U = 0`.'
+      explain: 'In an isothermal process on an ideal gas, &Delta;<i>T</i> = 0, so internal energy change &Delta;<i>U</i> = 0.'
     },
     {
       id: 'cs',
@@ -58,6 +58,118 @@
   let MANIFEST = null;
   const STREAM_CACHE = {};
   let ACTIVE_STREAM = null;
+
+  /* ── Zero-Lag Optional liquidGL Header Refractor (Desktop Home Only) ── */
+  let liquidGLLoadPromise = null;
+  let activeGlassLens = null;
+  let glassMountTimer = null;
+  let glassResizeTimer = null;
+  let glassResizeBound = false;
+
+  function glassTintForTheme() {
+    return document.body.classList.contains('light')
+      ? 'rgba(255, 255, 255, 0.62)'
+      : 'rgba(14, 15, 20, 0.56)';
+  }
+
+  function canRunLiquidGL() {
+    if (typeof window === 'undefined') return false;
+    if (window.innerWidth < 900) return false;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) return false;
+    return true;
+  }
+
+  function destroyHomeGlass() {
+    if (glassMountTimer) {
+      clearTimeout(glassMountTimer);
+      glassMountTimer = null;
+    }
+    if (activeGlassLens) {
+      try {
+        if (Array.isArray(activeGlassLens)) {
+          activeGlassLens.forEach((l) => l && typeof l.destroy === 'function' && l.destroy());
+        } else if (typeof activeGlassLens.destroy === 'function') {
+          activeGlassLens.destroy();
+        }
+      } catch (_) {}
+      activeGlassLens = null;
+    }
+  }
+
+  function loadLiquidGLOnce() {
+    if (typeof window.liquidGL === 'function') return Promise.resolve();
+    if (liquidGLLoadPromise) return liquidGLLoadPromise;
+    liquidGLLoadPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'assets/liquidGL.js';
+      s.async = true;
+      s.onload = () => resolve();
+      s.onerror = () => {
+        liquidGLLoadPromise = null;
+        reject(new Error('liquidGL failed to load'));
+      };
+      document.head.appendChild(s);
+    });
+    return liquidGLLoadPromise;
+  }
+
+  function mountHomeGlass() {
+    destroyHomeGlass();
+    if (!glassResizeBound) {
+      glassResizeBound = true;
+      window.addEventListener('resize', () => {
+        if (!canRunLiquidGL() || view !== 'home') {
+          destroyHomeGlass();
+          return;
+        }
+        clearTimeout(glassResizeTimer);
+        glassResizeTimer = setTimeout(() => {
+          if (view === 'home' && canRunLiquidGL() && !activeGlassLens) mountHomeGlass();
+        }, 220);
+      }, { passive: true });
+    }
+    if (view !== 'home' || !canRunLiquidGL()) return;
+
+    const scheduleMount = () => {
+      glassMountTimer = setTimeout(async () => {
+        glassMountTimer = null;
+        if (view !== 'home' || !canRunLiquidGL()) return;
+        const pane = document.querySelector('.liquid-gl-pane');
+        const stage = document.querySelector('.home-stage');
+        if (!pane || !stage) return;
+        try {
+          await loadLiquidGLOnce();
+          if (view !== 'home' || !canRunLiquidGL() || typeof window.liquidGL !== 'function') return;
+          if (!document.body.contains(pane)) return;
+          activeGlassLens = window.liquidGL({
+            target: '.liquid-gl-pane',
+            snapshot: '.home-stage',
+            zIndex: 1,
+            resolution: 1.0,
+            refraction: 0.014,
+            bevelDepth: 0.055,
+            bevelWidth: 0.16,
+            frost: 2,
+            shadow: false,
+            specular: false,
+            reveal: 'fade',
+            tilt: false,
+            interaction: 'none',
+            tint: glassTintForTheme(),
+          });
+        } catch (_) {
+          // Graceful fallback: CSS backdrop-filter remains active
+        }
+      }, 120);
+    };
+
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(scheduleMount, { timeout: 600 });
+    } else {
+      scheduleMount();
+    }
+  }
   let routeStream = null;
   let view = 'home';
   let currentSubj = 'phy';
@@ -276,17 +388,21 @@
     return list;
   }
 
-  function scheduleMathJax() {
+  function scheduleMathJax(attempt) {
+    const tries = attempt || 0;
     clearTimeout(mathJaxTimer);
     mathJaxTimer = setTimeout(() => {
-      if (!window.MathJax || !window.MathJax.typesetPromise) return;
+      if (!window.MathJax || !window.MathJax.typesetPromise) {
+        if (tries < 15) scheduleMathJax(tries + 1);
+        return;
+      }
       const targets = document.querySelectorAll('.tex2jax_process');
       if (!targets.length) return;
       try {
         window.MathJax.typesetClear && window.MathJax.typesetClear(Array.from(targets));
         window.MathJax.typesetPromise(Array.from(targets)).catch(() => {});
       } catch (e) {}
-    }, 30);
+    }, tries ? 200 : 30);
   }
 
   function updateTabIndicators() {
@@ -579,25 +695,29 @@
       : syncStatus.configured ? 'Sign In' : 'Cloud Sync';
 
     m.innerHTML = `
-      <header class="home-header" data-enter="1">
-        <div class="home-brand">
-          <span class="brand-dot"></span>
-          <span class="home-brand-title">BoardDeck</span>
-          <span class="tag mono">HSC 12</span>
-        </div>
-        <div class="home-header-actions">
-          <button class="btn sm" onclick="openCmdModal()">${ICONS.search} Quick Jump <span class="kbd">Ctrl+K</span></button>
-          <button class="btn sm" id="homeSyncBtn" onclick="openSyncModal()">
-            <span class="sync-dot ${syncStatus.mode === 'connected' ? 'connected' : syncStatus.mode === 'syncing' ? 'syncing' : ''}"></span>
-            <span>${escapeHtml(syncBtnLabel)}</span>
-          </button>
-          <div class="theme-seg">
-            <button class="${state.theme === 'dark' ? 'active' : ''}" onclick="setTheme('dark')">${ICONS.moon}</button>
-            <button class="${state.theme === 'light' ? 'active' : ''}" onclick="setTheme('light')">${ICONS.sun}</button>
+      <header class="home-header" data-enter="1" data-liquid-ignore>
+        <div class="liquid-gl-pane" aria-hidden="true"></div>
+        <div class="home-header-inner">
+          <div class="home-brand">
+            <span class="brand-dot"></span>
+            <span class="home-brand-title">BoardDeck</span>
+            <span class="tag mono">HSC 12</span>
+          </div>
+          <div class="home-header-actions">
+            <button class="btn sm" onclick="openCmdModal()">${ICONS.search} Quick Jump <span class="kbd">Ctrl+K</span></button>
+            <button class="btn sm" id="homeSyncBtn" onclick="openSyncModal()">
+              <span class="sync-dot ${syncStatus.mode === 'connected' ? 'connected' : syncStatus.mode === 'syncing' ? 'syncing' : ''}"></span>
+              <span>${escapeHtml(syncBtnLabel)}</span>
+            </button>
+            <div class="theme-seg">
+              <button class="${state.theme === 'dark' ? 'active' : ''}" onclick="setTheme('dark')">${ICONS.moon}</button>
+              <button class="${state.theme === 'light' ? 'active' : ''}" onclick="setTheme('light')">${ICONS.sun}</button>
+            </div>
           </div>
         </div>
       </header>
 
+      <div class="home-stage">
       <section class="hero-split">
         <div class="home-hero">
           <h1 data-enter="2">Maharashtra HSC past papers, mapped by chapter and weightage.</h1>
@@ -656,9 +776,11 @@
       <div class="subject-grid">
         ${elective.map(renderStreamCard).join('')}
       </div>
+      </div>
     `;
     setTimeout(updateTabIndicators, 15);
     scheduleMathJax();
+    mountHomeGlass();
   }
 
   window.setHeroTab = function (idx) {
@@ -1111,6 +1233,7 @@
       renderHome();
       return;
     }
+    destroyHomeGlass();
     shell.classList.remove('is-home');
     renderSidebar();
     if (!ACTIVE_STREAM) return;
