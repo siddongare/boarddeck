@@ -1259,17 +1259,17 @@
         </div>
 
         <div class="toolbar">
-          <input type="text" placeholder="Search questions, equations, years..." value="${escapeHtml(filters.search)}" oninput="filters.search=this.value;renderChapterBody();" />
-          <select onchange="filters.year=this.value;render();">${yearOpts}</select>
-          <select onchange="filters.section=this.value;render();">${secOpts}</select>
-          <select onchange="filters.status=this.value;render();">
+          <input type="text" placeholder="Search questions, equations, years..." value="${escapeHtml(filters.search)}" oninput="setChapterFilter('search', this.value)" />
+          <select onchange="setChapterFilter('year', this.value)">${yearOpts}</select>
+          <select onchange="setChapterFilter('section', this.value)">${secOpts}</select>
+          <select onchange="setChapterFilter('status', this.value)">
             <option value="all" ${filters.status === 'all' ? 'selected' : ''}>All Progress</option>
             <option value="unattempted" ${filters.status === 'unattempted' ? 'selected' : ''}>Unattempted</option>
             <option value="review" ${filters.status === 'review' ? 'selected' : ''}>Review Again</option>
             <option value="mastered" ${filters.status === 'mastered' ? 'selected' : ''}>Mastered</option>
           </select>
-          <button class="btn ${filters.repeatsOnly ? 'active-filter' : ''}" onclick="filters.repeatsOnly=!filters.repeatsOnly;render();">Repeats 2x+</button>
-          <button class="btn ${filters.mcqOnly ? 'active-filter' : ''}" onclick="filters.mcqOnly=!filters.mcqOnly;render();">MCQs Only</button>
+          <button class="btn ${filters.repeatsOnly ? 'active-filter' : ''}" onclick="toggleChapterFilter('repeatsOnly')">Repeats 2x+</button>
+          <button class="btn ${filters.mcqOnly ? 'active-filter' : ''}" onclick="toggleChapterFilter('mcqOnly')">MCQs Only</button>
         </div>
 
         <div id="chapterBody">${bodyHtml}</div>
@@ -1324,7 +1324,7 @@
     const revCount = paperQs.filter(q => !!state.mockRevealed[q.uid]).length;
 
     const subSwitch = subKeys.length > 1
-      ? `<select onchange="currentMockSubj=this.value;currentMockYear='';render();">${subKeys.map(sk => `<option value="${sk}" ${currentMockSubj === sk ? 'selected' : ''}>${escapeHtml(ACTIVE_STREAM.subjects[sk].code)} — ${escapeHtml(ACTIVE_STREAM.subjects[sk].title)}</option>`).join('')}</select>`
+      ? `<select onchange="setMockSubj(this.value)">${subKeys.map(sk => `<option value="${sk}" ${currentMockSubj === sk ? 'selected' : ''}>${escapeHtml(ACTIVE_STREAM.subjects[sk].code)} — ${escapeHtml(ACTIVE_STREAM.subjects[sk].title)}</option>`).join('')}</select>`
       : '';
 
     m.innerHTML = `
@@ -1349,7 +1349,7 @@
 
         <div class="toolbar">
           ${subSwitch}
-          <select onchange="currentMockYear=this.value;render();">
+          <select onchange="setMockYear(this.value)">
             ${papers.map(p => `<option value="${escapeHtml(p.year)}" ${currentMockYear === p.year ? 'selected' : ''}>${escapeHtml(p.year)}</option>`).join('')}
           </select>
           <span class="tag">MCQ Score: ${mcqScore}/${mcqsInPaper.length}</span>
@@ -1419,17 +1419,35 @@
     `;
   }
 
+  function updateMobileBottomNav() {
+    const nav = document.getElementById('appBottomNav');
+    if (!nav) return;
+    if (view === 'home' || !routeStream || !ACTIVE_STREAM) {
+      nav.innerHTML = '';
+      return;
+    }
+    nav.innerHTML = `
+      <button type="button" class="app-nav-item ${view === 'overview' ? 'active' : ''}" onclick="navTo('overview')">Overview</button>
+      <button type="button" class="app-nav-item ${view === 'chapter' ? 'active' : ''}" onclick="navTo('chapter','${escapeHtml(currentSubj)}','${escapeHtml(currentChapter)}')">Drill</button>
+      <button type="button" class="app-nav-item ${view === 'mock' ? 'active' : ''}" onclick="navTo('mock')">Mock</button>
+      <button type="button" class="app-nav-item ${view === 'review' ? 'active' : ''}" onclick="navTo('review')">Review</button>
+      <button type="button" class="app-nav-item" onclick="toggleDrawer()">Chapters</button>
+    `;
+  }
+
   function render() {
     const shell = document.getElementById('shell');
     if (view === 'home' || !routeStream) {
       shell.classList.add('is-home');
       renderSidebar();
       renderHome();
+      updateMobileBottomNav();
       return;
     }
     destroyHomeGlass();
     shell.classList.remove('is-home');
     renderSidebar();
+    updateMobileBottomNav();
     if (!ACTIVE_STREAM) return;
     if (view === 'overview') renderOverview();
     else if (view === 'chapter') renderChapter();
@@ -1508,6 +1526,28 @@
 
   window.focusCard = function (idx) {
     focusedIdx = idx;
+  };
+
+  window.setChapterFilter = function (key, val) {
+    filters[key] = val;
+    if (key === 'search') renderChapterBody();
+    else render();
+  };
+
+  window.toggleChapterFilter = function (key) {
+    filters[key] = !filters[key];
+    render();
+  };
+
+  window.setMockSubj = function (val) {
+    currentMockSubj = val;
+    currentMockYear = '';
+    render();
+  };
+
+  window.setMockYear = function (val) {
+    currentMockYear = val;
+    render();
   };
 
   window.clearFilters = function () {
