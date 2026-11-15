@@ -702,6 +702,7 @@
           <button class="btn sm" onclick="exportProgress()" title="Export JSON backup">${ICONS.download}</button>
         </div>
         <div class="save-status" id="saveStatus"></div>
+        <a class="save-status" href="https://github.com/siddongare/boarddeck/issues/new" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;">Feedback / Report issue ↗</a>
       </div>
     `;
     updateSaveStatusDom();
