@@ -68,8 +68,8 @@
 
   function glassTintForTheme() {
     return document.body.classList.contains('light')
-      ? 'rgba(255, 255, 255, 0.52)'
-      : 'rgba(13, 17, 26, 0.46)';
+      ? 'rgba(255, 255, 255, 0.56)'
+      : 'rgba(14, 16, 22, 0.44)';
   }
 
   function canRunLiquidGL() {
@@ -140,8 +140,9 @@
         if (view !== 'home' || !canRunLiquidGL()) return;
         const headerPane = document.querySelector('.liquid-gl-pane');
         const cardPane = document.querySelector('.hero-demo-glass');
+        const dockPane = document.querySelector('.home-dock-glass');
         const stage = document.querySelector('.home-stage');
-        if (!stage || (!headerPane && !cardPane)) return;
+        if (!stage || (!headerPane && !cardPane && !dockPane)) return;
         try {
           await loadLiquidGLOnce();
           if (view !== 'home' || !canRunLiquidGL() || typeof window.liquidGL !== 'function') return;
@@ -152,11 +153,11 @@
               snapshot: '.home-stage',
               zIndex: 1,
               resolution: 1.0,
-              refraction: 0.022,
-              aberration: 0.01,
-              bevelDepth: 0.085,
-              bevelWidth: 0.22,
-              frost: 1.8,
+              refraction: 0.026,
+              aberration: 0.012,
+              bevelDepth: 0.095,
+              bevelWidth: 0.24,
+              frost: 1.6,
               shadow: true,
               specular: true,
               reveal: 'fade',
@@ -172,11 +173,11 @@
               snapshot: '.home-stage',
               zIndex: 1,
               resolution: 1.0,
-              refraction: 0.026,
-              aberration: 0.014,
-              bevelDepth: 0.11,
-              bevelWidth: 0.24,
-              frost: 2.2,
+              refraction: 0.030,
+              aberration: 0.016,
+              bevelDepth: 0.125,
+              bevelWidth: 0.26,
+              frost: 2.0,
               shadow: true,
               specular: true,
               reveal: 'fade',
@@ -185,6 +186,26 @@
               tint,
             });
             if (cardLens) activeGlassLenses.push(cardLens);
+          }
+          if (dockPane && document.body.contains(dockPane)) {
+            const dockLens = window.liquidGL({
+              target: '.home-dock-glass',
+              snapshot: '.home-stage',
+              zIndex: 1,
+              resolution: 1.0,
+              refraction: 0.028,
+              aberration: 0.014,
+              bevelDepth: 0.105,
+              bevelWidth: 0.24,
+              frost: 1.8,
+              shadow: true,
+              specular: true,
+              reveal: 'fade',
+              tilt: false,
+              interaction: 'none',
+              tint,
+            });
+            if (dockLens) activeGlassLenses.push(dockLens);
           }
         } catch (_) {
           // Graceful fallback: specular CSS backdrop-filter remains active
@@ -751,9 +772,17 @@
 
     const syncBtnLabel = syncStatus.mode === 'connected'
       ? `${syncStatus.email ? syncStatus.email.split('@')[0] : 'Synced'}`
-      : syncStatus.configured ? 'Sign In' : 'Cloud Sync';
+      : 'Sign In';
 
     const repeatTotal = MANIFEST.streams.reduce((a, s) => a + s.repeatCount, 0);
+    const repeatPct = totalQs ? Math.round((100 * repeatTotal) / totalQs) : 0;
+    const masteredTotal = MANIFEST.streams.reduce((acc, st) => acc + st.uids.filter(id => state.mastery[id] === 'mastered').length, 0);
+    const masteredPct = totalQs ? Math.round((100 * masteredTotal) / totalQs) : 0;
+    const maxQ = Math.max(...MANIFEST.streams.map(s => s.questionCount), 1);
+    const coreQCount = core.reduce((a, s) => a + s.questionCount, 0);
+    const elecQCount = elective.reduce((a, s) => a + s.questionCount, 0);
+    const circumference = 2 * Math.PI * 26;
+    const strokeDashoffset = (circumference * (1 - masteredPct / 100)).toFixed(1);
 
     m.innerHTML = `
       <header class="home-header" data-enter="1" data-liquid-ignore>
@@ -785,27 +814,27 @@
             <svg class="hero-optical-beam" viewBox="0 0 680 520" fill="none" xmlns="http://www.w3.org/2000/svg">
               <defs>
                 <linearGradient id="beamLineA" x1="0" y1="60" x2="680" y2="340" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stop-color="#38bdf8" stop-opacity="0"/>
-                  <stop offset="48%" stop-color="#38bdf8" stop-opacity="0.82"/>
-                  <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+                  <stop offset="0%" stop-color="#d4ff00" stop-opacity="0"/>
+                  <stop offset="48%" stop-color="#d4ff00" stop-opacity="0.88"/>
+                  <stop offset="100%" stop-color="#d4ff00" stop-opacity="0"/>
                 </linearGradient>
                 <linearGradient id="beamLineB" x1="40" y1="420" x2="640" y2="110" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stop-color="#0284c7" stop-opacity="0"/>
-                  <stop offset="52%" stop-color="#38bdf8" stop-opacity="0.58"/>
-                  <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+                  <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+                  <stop offset="52%" stop-color="#d4ff00" stop-opacity="0.58"/>
+                  <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
                 </linearGradient>
                 <radialGradient id="prismCore" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.24"/>
-                  <stop offset="55%" stop-color="#0284c7" stop-opacity="0.08"/>
-                  <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+                  <stop offset="0%" stop-color="#d4ff00" stop-opacity="0.22"/>
+                  <stop offset="60%" stop-color="#d4ff00" stop-opacity="0.06"/>
+                  <stop offset="100%" stop-color="#d4ff00" stop-opacity="0"/>
                 </radialGradient>
               </defs>
               <circle cx="360" cy="240" r="210" fill="url(#prismCore)"/>
-              <path d="M 30 130 C 210 130, 320 290, 650 220" stroke="url(#beamLineA)" stroke-width="2"/>
-              <path d="M 10 310 C 220 260, 390 120, 670 165" stroke="url(#beamLineB)" stroke-width="1.5"/>
+              <path d="M 30 130 C 210 130, 320 290, 650 220" stroke="url(#beamLineA)" stroke-width="2.2"/>
+              <path d="M 10 310 C 220 260, 390 120, 670 165" stroke="url(#beamLineB)" stroke-width="1.6"/>
               <path d="M 60 400 L 640 70" stroke="url(#beamLineA)" stroke-width="1.2" stroke-dasharray="5 6"/>
-              <circle cx="360" cy="230" r="108" stroke="#38bdf8" stroke-opacity="0.34" stroke-width="1.2"/>
-              <circle cx="360" cy="230" r="182" stroke="#38bdf8" stroke-opacity="0.18" stroke-width="1"/>
+              <circle cx="360" cy="230" r="108" stroke="#d4ff00" stroke-opacity="0.34" stroke-width="1.3"/>
+              <circle cx="360" cy="230" r="182" stroke="#d4ff00" stroke-opacity="0.16" stroke-width="1"/>
             </svg>
           </div>
 
@@ -813,30 +842,83 @@
             <div class="home-hero">
               <div class="hero-eyebrow" data-enter="1">
                 <span class="dot"></span>
-                <span>Maharashtra State Board · Class 12 Science &amp; Bifocal</span>
+                <span>Maharashtra HSC · Class 12 Science &amp; Bifocal</span>
               </div>
-              <h1 data-enter="2">Maharashtra HSC papers, mapped to the mark</h1>
-              <p data-enter="3">Drill chapter-mapped PYQs, spot repeat patterns, and practice 3-hour board mocks across six isolated exam streams.</p>
+              <h1 data-enter="2">HSC boards, engineered to the mark.</h1>
+              <p data-enter="3">Chapter-mapped PYQs, verified repeat patterns, and 3-hour timed mocks across six isolated exam streams.</p>
               <div class="hero-cta-row" data-enter="4">
                 <button class="btn primary" onclick="document.getElementById('subjectsDirectory')?.scrollIntoView({behavior:'smooth'})">Explore Subjects ${ICONS.arrow}</button>
-                <button class="btn" onclick="openSyncModal()">${ICONS.cloud} ${syncStatus.user ? 'Cloud Synced' : 'Sign In with Google'}</button>
+                <button class="btn" onclick="openSyncModal()">${ICONS.cloud} ${syncStatus.user ? 'Cloud Synced' : 'Sign In & Sync'}</button>
               </div>
               <div class="hero-proof" data-enter="5">
                 <div><div class="hero-proof-val mono">${totalQs.toLocaleString()}</div><div class="hero-proof-lbl">Board questions</div></div>
-                <div><div class="hero-proof-val mono">6</div><div class="hero-proof-lbl">Isolated streams</div></div>
+                <div><div class="hero-proof-val mono">6</div><div class="hero-proof-lbl">Exam streams</div></div>
                 <div><div class="hero-proof-val mono">${repeatTotal.toLocaleString()}</div><div class="hero-proof-lbl">Repeat flags</div></div>
                 <div><div class="hero-proof-val mono">2015–26</div><div class="hero-proof-lbl">Official papers</div></div>
               </div>
             </div>
 
-            <div class="hero-demo" data-enter="3" data-liquid-ignore>
-              <div class="hero-demo-glass" aria-hidden="true"></div>
-              <div class="hero-demo-inner tex2jax_ignore" id="heroDemoInner">
-                ${buildHeroDemoInner()}
+            <div class="hero-bento" data-enter="3">
+              <div class="hero-demo" data-liquid-ignore>
+                <div class="hero-demo-glass" aria-hidden="true"></div>
+                <div class="hero-demo-inner tex2jax_ignore" id="heroDemoInner">
+                  ${buildHeroDemoInner()}
+                </div>
+              </div>
+
+              <div class="bento-tile bento-lime">
+                <div class="bento-head">
+                  <span class="bento-kicker">Repeat Density</span>
+                  <span class="bento-pill-dark mono">${repeatTotal} FLAGS</span>
+                </div>
+                <div>
+                  <div class="bento-big mono">${repeatPct}%</div>
+                  <div class="bento-sub">${totalQs.toLocaleString()} archived MSBSHSE PYQs</div>
+                </div>
+                <div class="bento-bars">
+                  ${MANIFEST.streams.map((st) => {
+                    const h = Math.max(22, Math.round((100 * st.questionCount) / maxQ));
+                    return `
+                      <button type="button" class="bento-bar-btn" onclick="openStream('${st.id}','overview')" title="${escapeHtml(st.name)} (${st.questionCount} PYQs)">
+                        <span class="bento-bar-track"><span class="bento-bar-fill" style="height:${h}%"></span></span>
+                        <span>${escapeHtml(st.short.slice(0, 3).toUpperCase())}</span>
+                      </button>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+
+              <div class="bento-tile bento-gauge">
+                <div class="bento-head">
+                  <span class="bento-kicker" style="color:var(--muted);">Syllabus Mastery</span>
+                  <span class="tag mono">${masteredTotal}/${totalQs}</span>
+                </div>
+                <div class="bento-gauge-body">
+                  <div class="gauge-ring">
+                    <svg viewBox="0 0 66 66">
+                      <circle class="gauge-ring-bg" cx="33" cy="33" r="26"></circle>
+                      <circle class="gauge-ring-fg" cx="33" cy="33" r="26" stroke-dasharray="${circumference.toFixed(1)}" stroke-dashoffset="${strokeDashoffset}"></circle>
+                    </svg>
+                    <div class="gauge-val mono">${masteredPct}%</div>
+                  </div>
+                  <div class="gauge-meta">
+                    <div class="gauge-row"><span>Core PCM+Eng</span><strong class="mono">${coreQCount}</strong></div>
+                    <div class="gauge-row"><span>Bifocal CS/EL</span><strong class="mono">${elecQCount}</strong></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </section>
+
+        <nav class="home-dock" aria-label="Quick stream switcher" data-liquid-ignore>
+          <div class="home-dock-glass" aria-hidden="true"></div>
+          <div class="home-dock-inner">
+            <span class="dock-label">Streams</span>
+            ${MANIFEST.streams.map((st, idx) => `<button type="button" class="dock-pill ${idx === 0 ? 'lime' : ''}" onclick="openStream('${st.id}','overview')">${escapeHtml(st.short)}</button>`).join('')}
+            <button type="button" class="dock-pill" onclick="document.getElementById('subjectsDirectory')?.scrollIntoView({behavior:'smooth'})">Directory ↓</button>
+          </div>
+        </nav>
 
         <section class="subjects-section" id="subjectsDirectory">
           ${resumeHtml}
@@ -1530,7 +1612,6 @@
   function renderSyncModal() {
     const body = document.getElementById('syncModalBody');
     const st = window.BoardDeckSync ? window.BoardDeckSync.getStatus() : syncStatus;
-    const cfg = st.config || { url: '', anonKey: '' };
 
     if (st.user) {
       body.innerHTML = `
@@ -1553,16 +1634,22 @@
       return;
     }
 
-    const authSection = st.configured ? `
-      <button type="button" class="oauth-btn" onclick="handleGoogleSignIn()">
+    const googleReady = !(st.providers && st.providers.google === false);
+
+    body.innerHTML = `
+      <p style="margin:0 0 14px;font-size:13.5px;color:var(--ink-2);line-height:1.5;">
+        Keep your solved papers, confidence flags, exam timers, and notes synced across desktop and phone.
+      </p>
+      <button type="button" class="oauth-btn ${googleReady ? '' : 'is-disabled'}" onclick="handleGoogleSignIn()">
         <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
           <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
           <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
           <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
           <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
         </svg>
-        <span>Continue with Google</span>
+        <span>${googleReady ? 'Continue with Google' : 'Google Sign-In unavailable yet'}</span>
       </button>
+      ${googleReady ? '' : '<div style="font-size:12px;color:var(--muted);margin-top:6px;text-align:center;">Use Email + Password or Magic Link below to sign in right away.</div>'}
       <div class="auth-divider"><span>or with email</span></div>
       <div class="seg-tabs" style="margin-bottom:14px;" role="tablist">
         <div class="seg-ind"></div>
@@ -1584,49 +1671,13 @@
       </div>` : ''}
       <div id="syncInfoMsg" style="font-size:12.5px;color:var(--pos);margin-bottom:10px;display:none;"></div>
       <div id="syncErrMsg" style="font-size:12.5px;color:var(--neg);margin-bottom:10px;display:none;"></div>
-      <button class="btn primary" style="width:100%;" onclick="handleAuthSubmit()">
-        ${syncModeTab === 'signin' ? 'Sign In &amp; Sync Progress' : syncModeTab === 'signup' ? 'Create Account &amp; Sync' : 'Send Magic Login Link'}
+      <button class="btn primary" style="width:100%;height:42px;" onclick="handleAuthSubmit()">
+        ${syncModeTab === 'signin' ? 'Sign In' : syncModeTab === 'signup' ? 'Create Account' : 'Send Magic Link'}
       </button>
-    ` : `
-      <div class="banner-warn" style="margin-bottom:14px;">
-        <strong>Connect Supabase Anon Key to enable Sign In:</strong><br/>
-        1. In Supabase -> <strong>Settings -> Integrations -> Vercel</strong>, click <strong>Add new project connection</strong> (then redeploy) — OR<br/>
-        2. Copy your <strong>Publishable / Anon Key</strong> from <strong>Settings -> API Keys</strong> and paste it below. Also run <code>supabase_schema.sql</code> in SQL Editor once.
-      </div>
-    `;
-
-    body.innerHTML = `
-      ${authSection}
-      <details ${st.configured ? '' : 'open'} style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);">
-        <summary style="cursor:pointer;font-size:13px;font-weight:500;color:var(--ink-2);">Supabase Project Connection</summary>
-        <div style="margin-top:12px;">
-          <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">For Google Sign In, turn on Google under Supabase -> Authentication -> Providers -> Google.</div>
-          <div class="field-group">
-            <label for="cfgUrl">Supabase URL</label>
-            <input id="cfgUrl" type="url" placeholder="https://xxxx.supabase.co" value="${escapeHtml(cfg.url)}" />
-          </div>
-          <div class="field-group">
-            <label for="cfgKey">Supabase Anon / Publishable Key</label>
-            <input id="cfgKey" type="text" placeholder="eyJhbGci... or sb_publishable_..." value="${escapeHtml(cfg.anonKey)}" />
-          </div>
-          <div style="display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;">
-            <button class="btn sm accent" onclick="handleSaveSupaCfg()">Save Connection</button>
-            <a class="btn sm" href="supabase_schema.sql" target="_blank">View SQL Schema</a>
-          </div>
-        </div>
-      </details>
     `;
     setTimeout(updateTabIndicators, 15);
   }
   window.renderSyncModal = renderSyncModal;
-
-  window.handleSaveSupaCfg = async function () {
-    const url = document.getElementById('cfgUrl')?.value || '';
-    const key = document.getElementById('cfgKey')?.value || '';
-    await window.BoardDeckSync.saveConfig(url, key);
-    showToast(url && key ? 'Supabase config saved.' : 'Supabase config cleared.', 'ok');
-    renderSyncModal();
-  };
 
   window.handleGoogleSignIn = async function () {
     const errBox = document.getElementById('syncErrMsg');

@@ -26,10 +26,26 @@
 
   let client = null;
   let sessionUser = null;
+  let authProviders = { google: null, email: true };
   let syncStatus = { mode: 'guest', label: 'Guest · Local Only', email: null, lastSyncedAt: null, error: null };
   let pushTimer = null;
   let pulling = false;
   const listeners = new Set();
+
+  async function refreshAuthSettings(cfg) {
+    try {
+      const r = await fetch(`${cfg.url}/auth/v1/settings`, {
+        headers: { apikey: cfg.anonKey, Authorization: `Bearer ${cfg.anonKey}` }
+      });
+      if (r.ok) {
+        const j = await r.json();
+        authProviders = {
+          google: !!(j && j.external && j.external.google),
+          email: j && j.external ? j.external.email !== false : true
+        };
+      }
+    } catch (_) {}
+  }
 
   function emit() {
     const snap = window.BoardDeckSync.getStatus();
@@ -72,6 +88,7 @@
       return null;
     }
     try {
+      refreshAuthSettings(cfg);
       if (!client) {
         const mod = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
         client = mod.createClient(cfg.url, cfg.anonKey, {
@@ -116,6 +133,7 @@
       return {
         ...syncStatus,
         user: sessionUser,
+        providers: authProviders,
         configured: !!stored,
         config: stored || { url: env.url, anonKey: env.anonKey, source: 'none' }
       };
@@ -138,9 +156,14 @@
 
     async signInPassword(email, password) {
       const c = await initClient();
-      if (!c) throw new Error('Supabase Anon Key is not configured yet.');
+      if (!c) throw new Error('Account service is temporarily unavailable.');
       const { data, error } = await c.auth.signInWithPassword({ email: email.trim(), password });
-      if (error) throw error;
+      if (error) {
+        if (/email not confirmed/i.test(error.message || '')) {
+          throw new Error('Confirm your email from the verification link in your inbox, or use Magic Link.');
+        }
+        throw error;
+      }
       sessionUser = data.user;
       await this.pullAndMerge();
       return data;
@@ -148,7 +171,10 @@
 
     async signInGoogle() {
       const c = await initClient();
-      if (!c) throw new Error('Supabase Anon Key is not configured yet.');
+      if (!c) throw new Error('Account service is temporarily unavailable.');
+      if (authProviders.google === false) {
+        throw new Error('Google sign-in is not turned on yet. Use Email or Magic Link below.');
+      }
       const redirectTo = window.location.origin + window.location.pathname;
       const { data, error } = await c.auth.signInWithOAuth({
         provider: 'google',
@@ -163,7 +189,7 @@
 
     async signUpPassword(email, password) {
       const c = await initClient();
-      if (!c) throw new Error('Supabase Anon Key is not configured yet.');
+      if (!c) throw new Error('Account service is temporarily unavailable.');
       const { data, error } = await c.auth.signUp({
         email: email.trim(),
         password,
@@ -180,7 +206,7 @@
 
     async sendMagicLink(email) {
       const c = await initClient();
-      if (!c) throw new Error('Supabase Anon Key is not configured yet.');
+      if (!c) throw new Error('Account service is temporarily unavailable.');
       const { error } = await c.auth.signInWithOtp({
         email: email.trim(),
         options: { emailRedirectTo: window.location.origin + window.location.pathname }
@@ -190,7 +216,7 @@
 
     async resetPassword(email) {
       const c = await initClient();
-      if (!c) throw new Error('Supabase Anon Key is not configured yet.');
+      if (!c) throw new Error('Account service is temporarily unavailable.');
       const { error } = await c.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: window.location.origin + window.location.pathname
       });
