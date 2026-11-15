@@ -43,6 +43,7 @@
           google: !!(j && j.external && j.external.google),
           email: j && j.external ? j.external.email !== false : true
         };
+        emit();
       }
     } catch (_) {}
   }
@@ -142,6 +143,11 @@
     async init() {
       await initClient();
       if (sessionUser) await this.pullAndMerge();
+    },
+
+    async refreshProviders() {
+      const cfg = getStoredConfig();
+      if (cfg) await refreshAuthSettings(cfg);
     },
 
     async saveConfig(url, anonKey) {
