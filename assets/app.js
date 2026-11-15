@@ -489,14 +489,33 @@
     document.getElementById('shell').classList.remove('is-home');
     document.body.classList.toggle('sidebar-collapsed', !!state.sidebarCollapsed);
 
-    // Show clean loading skeleton immediately if not cached
+    // Show layout-matched loading skeleton immediately if not cached
     if (!STREAM_CACHE[streamId]) {
       ACTIVE_STREAM = null;
       renderSidebar();
       document.getElementById('main').innerHTML = `
-        <div class="topbar"><div><h1 class="page-title">Loading ${escapeHtml(streamId.toUpperCase())}...</h1><div class="page-meta">Fetching chapter-mapped board archive</div></div></div>
-        <div class="skeleton-card"><div class="skel-line" style="width:40%;height:18px;"></div><div class="skel-line" style="width:88%;"></div><div class="skel-line" style="width:72%;"></div></div>
-        <div class="skeleton-card"><div class="skel-line" style="width:32%;height:18px;"></div><div class="skel-line" style="width:94%;"></div><div class="skel-line" style="width:65%;"></div></div>
+        <div class="topbar">
+          <div>
+            <h1 class="page-title">Loading ${escapeHtml(streamId.toUpperCase())}...</h1>
+            <div class="page-meta">Fetching chapter-mapped board archive</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <div class="skel-block skel-pill" style="width:110px;height:36px;"></div>
+            <div class="skel-block skel-pill" style="width:96px;height:36px;"></div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="skel-card" style="padding:16px 18px;"><div class="skel-block" style="width:55%;height:12px;margin-bottom:12px;"></div><div class="skel-block" style="width:45%;height:28px;"></div></div>
+          <div class="skel-card" style="padding:16px 18px;"><div class="skel-block" style="width:55%;height:12px;margin-bottom:12px;"></div><div class="skel-block" style="width:40%;height:28px;"></div></div>
+          <div class="skel-card" style="padding:16px 18px;"><div class="skel-block" style="width:55%;height:12px;margin-bottom:12px;"></div><div class="skel-block" style="width:35%;height:28px;"></div></div>
+          <div class="skel-card" style="padding:16px 18px;"><div class="skel-block" style="width:55%;height:12px;margin-bottom:12px;"></div><div class="skel-block" style="width:30%;height:28px;"></div></div>
+        </div>
+        <div class="skel-card" style="margin-top:16px;">
+          <div class="skel-block" style="width:32%;height:16px;margin-bottom:18px;"></div>
+          <div class="skel-block" style="width:100%;height:38px;margin-bottom:10px;"></div>
+          <div class="skel-block" style="width:100%;height:38px;margin-bottom:10px;"></div>
+          <div class="skel-block" style="width:100%;height:38px;"></div>
+        </div>
       `;
     }
 
