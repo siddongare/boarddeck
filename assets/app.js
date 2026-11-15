@@ -1602,6 +1602,9 @@
   // Cloud Sync Modal
   window.openSyncModal = function () {
     document.getElementById('syncModalBackdrop').classList.add('open');
+    if (window.BoardDeckSync && window.BoardDeckSync.refreshProviders) {
+      window.BoardDeckSync.refreshProviders();
+    }
     renderSyncModal();
   };
 
@@ -1635,12 +1638,10 @@
     }
 
     const googleReady = !(st.providers && st.providers.google === false);
+    const emailReady = !(st.providers && st.providers.email === false);
 
-    body.innerHTML = `
-      <p style="margin:0 0 14px;font-size:13.5px;color:var(--ink-2);line-height:1.5;">
-        Keep your solved papers, confidence flags, exam timers, and notes synced across desktop and phone.
-      </p>
-      <button type="button" class="oauth-btn ${googleReady ? '' : 'is-disabled'}" onclick="handleGoogleSignIn()">
+    const googleBlock = `
+      <button type="button" class="oauth-btn ${googleReady ? '' : 'is-disabled'}" style="height:44px;" onclick="handleGoogleSignIn()">
         <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
           <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
           <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
@@ -1649,7 +1650,9 @@
         </svg>
         <span>${googleReady ? 'Continue with Google' : 'Google Sign-In unavailable yet'}</span>
       </button>
-      ${googleReady ? '' : '<div style="font-size:12px;color:var(--muted);margin-top:6px;text-align:center;">Use Email + Password or Magic Link below to sign in right away.</div>'}
+    `;
+
+    const emailBlock = emailReady ? `
       <div class="auth-divider"><span>or with email</span></div>
       <div class="seg-tabs" style="margin-bottom:14px;" role="tablist">
         <div class="seg-ind"></div>
@@ -1674,6 +1677,19 @@
       <button class="btn primary" style="width:100%;height:42px;" onclick="handleAuthSubmit()">
         ${syncModeTab === 'signin' ? 'Sign In' : syncModeTab === 'signup' ? 'Create Account' : 'Send Magic Link'}
       </button>
+    ` : `
+      <div id="syncErrMsg" style="font-size:12.5px;color:var(--neg);margin-top:10px;display:none;"></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:12px;text-align:center;">
+        Your existing browser progress merges automatically when you sign in.
+      </div>
+    `;
+
+    body.innerHTML = `
+      <p style="margin:0 0 16px;font-size:13.5px;color:var(--ink-2);line-height:1.5;">
+        Keep your solved papers, confidence flags, exam timers, and notes synced across desktop and phone.
+      </p>
+      ${googleBlock}
+      ${emailBlock}
     `;
     setTimeout(updateTabIndicators, 15);
   }
