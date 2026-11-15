@@ -1,57 +1,68 @@
 # BoardDeck — HSC Class 12 PYQ & Mock Exam Workspace
 
-BoardDeck is a static workspace for preparing Maharashtra State Board (MSBSHSE) Class 12 exams across the compulsory Science streams and bifocal electives. Each subject stays isolated with its own chapter index, slot strategy, past papers, review queue, and mock exam timer.
+**Live app:** [boardeck.vercel.app](https://boardeck.vercel.app)
 
-## What's Inside
+BoardDeck is a static revision workspace built for Maharashtra State Board (MSBSHSE) Class 12 Science students. Compulsory Science papers (`Physics`, `Chemistry`, `Mathematics`, `English`) and Bifocal electives (`Computer Science D-9`, `Electronics C-2`) stay strictly isolated with their own chapter trees, weightage tables, past papers, review queues, and timed mock exams.
 
-- **Compulsory Core (2022–2026 Revised Syllabus · 8 Official Papers each)**
-  - **Physics (`54`):** 442 questions across 16 units (70M theory pattern)
-  - **Chemistry (`55`):** 581 questions across 16 units (70M theory + `\ce{}` chemical equations and structure MCQs)
-  - **Mathematics & Statistics (`40`):** 357 questions across 15 chapters (Part I & II, 80M pattern, AsciiMath + theorem drills)
-  - **English (`01`):** 267 questions mapped into Prose, Poetry & Appreciation templates, Writing Skills (`Q.4` A–D), and Novel (`4.1–4.4`, 80M pattern)
-- **Bifocal Electives (200-Mark Streams)**
-  - **Computer Science (`D-9`):** 963 PYQs across CS1 & CS2 (2015–2026 official + pre-2015 scan links)
-  - **Electronics (`C-2`):** 256 PYQs across Applied & Digital Electronics with circuit SVG diagrams and Boolean overlines
+## Covered Subjects (2,866 Questions · 1,034 Repeat Flags)
 
-Total dataset: **2,866 chapter-mapped questions** with **1,034 repeat flags** across **6 subjects**. Datasets lazy-load per subject from `data/<stream>.json` so the landing page loads fast and only fetches what you open.
+| Group | Subject | Code | Coverage | Count |
+| --- | --- | --- | --- | --- |
+| Core | Physics | `54` | 2022–2026 Revised Syllabus · 8 papers | 442 Qs |
+| Core | Chemistry | `55` | 2022–2026 Revised Syllabus · 8 papers | 581 Qs |
+| Core | Mathematics & Statistics | `40` | 2022–2026 Revised Syllabus · 8 papers | 357 Qs |
+| Core | English | `01` | Prose, Poetry, Writing Skills (`Q.4`), Novel | 267 Qs |
+| Bifocal | Computer Science | `D-9` | 2015–2026 structured + scan links | 963 Qs |
+| Bifocal | Electronics | `C-2` | Applied & Digital Electronics · SVG circuits | 256 Qs |
 
-## Screenshots
+Datasets lazy-load on demand per subject from `data/<stream>.json`, while `data/manifest.json` powers fast boot and isolated progress metrics on the landing screen.
+
+## Previews
 
 | Home & Subject Switcher | Overview & Slot Strategy | Chapter Drill (`\ce{}` & Solutions) |
 | --- | --- | --- |
 | ![Home](assets/home.png) | ![Overview](assets/overview.png) | ![Chapter Drill](assets/chapter-drill.png) |
 
-## Features
+## Key Features
 
-- **Hidden answers by default:** Attempt MCQs first to see instant right/wrong verification, or press `R` to reveal solutions on theory/numerical questions.
-- **MathJax & code isolation:** Renders AsciiMath vectors, matrices, integrals, and LaTeX `mhchem` formulas in Physics, Chemistry, and Maths while leaving HTML, C++, and 8085 Assembly code untouched.
-- **Paper-slot strategy:** Shows chapter weightage alongside high-ROI exam shortcuts (e.g., CS1 `Q.5` HTML vs C++ pairing, English `Q.4` template selection).
-- **Isolated mock papers:** Sorted in paper order (`Q.1` through the last long answer) with a 3-hour countdown timer and separate mock state so practice history doesn't spoil your simulation.
-- **Keyboard shortcuts:** `J` / `K` move between questions, `1–4` answer MCQs, `R` reveals solutions, `M` marks mastered, `F` sends to review, and `Ctrl+K` opens quick jump.
-- **Cloud Sync + Offline Guest fallback:** Works out of the box via `localStorage`, or connects to Supabase Auth + Postgres for cross-device sync.
+- **Hidden answers by default:** Attempt MCQs first for immediate verification or press `R` to reveal full step-by-step solutions.
+- **Formula & code isolation:** MathJax 3 (`input/tex` + `input/asciimath` + `mhchem`) formats vectors, integrals, and chemical equations cleanly while ignoring HTML, C++, and 8085 Assembly code blocks.
+- **Paper-slot strategy:** Maps chapter marks and exam shortcuts (such as CS1 `Q.5` HTML vs C++ pairing and English `Q.4` writing templates).
+- **Timed mock exams:** Sorts each past paper in original paper order with a 3-hour countdown and separate mock state.
+- **Keyboard navigation:** `J` / `K` move across cards, `1–4` answer MCQs, `R` toggles answers, `M` marks mastered, `F` queues review, and `Ctrl+K` opens quick chapter jump.
+- **Cloud Sync + Offline Guest mode:** Persists locally in `localStorage` out of the box and syncs across devices via Supabase Auth + Postgres Row Level Security.
+
+## Cloud Sync & Vercel Setup
+
+1. In Supabase, open **SQL Editor** and run [`supabase_schema.sql`](supabase_schema.sql) to create the `boarddeck_profiles` table and Row Level Security policies.
+2. In Supabase -> **Authentication -> URL Configuration**, add `https://boardeck.vercel.app/**` to **Redirect URLs** and set **Site URL** to `https://boardeck.vercel.app`.
+3. Link Supabase to Vercel via **Supabase -> Settings -> Integrations -> Vercel -> Add new project connection** (or set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel Environment Variables). During build, [`scripts/inject-env.mjs`](scripts/inject-env.mjs) writes those public config values into `assets/supa-env.js` automatically.
 
 ## Running Locally
 
-Because `data/*.json` files are loaded over `fetch()`, serve the folder using any static HTTP server:
+Because `data/*.json` files load over `fetch()`, run a local static server from the repo root:
 
 ```bash
 python -m http.server 8000
 ```
 
-Then open `http://localhost:8000/`.
+Then visit `http://localhost:8000/`.
 
-## Optional Cloud Sync Setup (Supabase)
+## Repository Structure
 
-1. Create a free project on [Supabase](https://supabase.com/).
-2. Open the **SQL Editor** and execute the contents of [`supabase_schema.sql`](supabase_schema.sql). This creates the `boarddeck_profiles` table with Row Level Security so users only read and write their own progress row.
-3. Click **Cloud Sync** in the top bar (or sidebar), expand **Supabase Project Connection**, and paste your **Project URL** and **Anon Public Key** (or hardcode them in `assets/sync.js` if hosting for friends).
-4. Sign in with Email + Password or Magic Link. Cloud and local progress merge automatically without overwriting mastered questions.
-
-## File Layout
-
-- `index.html` — Lean shell, MathJax 3 startup config, and modal containers
-- `assets/styles.css` — Dark/light theme tokens, layout grids, responsive drawer, and motion timing
-- `assets/app.js` — Lazy stream loader, filters, mock paper engine, keyboard navigation, and sync wiring
-- `assets/sync.js` — Optional Supabase client, merge logic, and offline guest fallback
-- `data/*.json` — Lightweight `manifest.json` + isolated per-subject datasets (`phy`, `chem`, `math`, `eng`, `cs`, `el`)
-- `supabase_schema.sql` — Postgres table, trigger, and RLS policies for Cloud Sync
+```text
+.
+├── assets/
+│   ├── app.js           # Client state, lazy JSON loader, filters, mock engine, sync hooks
+│   ├── styles.css         # Dark/light theme tokens, layout grids, responsive drawer, motion
+│   ├── supa-env.js        # Public Supabase endpoint stub (updated on Vercel build)
+│   └── sync.js            # Supabase Auth, timestamped merge, debounced cloud push
+├── data/
+│   ├── manifest.json      # Lightweight index across all 6 streams
+│   └── *.json             # Isolated subject datasets (phy, chem, math, eng, cs, el)
+├── scripts/
+│   └── inject-env.mjs     # Vercel build script writing public env vars to assets/supa-env.js
+├── index.html             # Application shell & MathJax 3 configuration
+├── supabase_schema.sql    # Postgres schema, RLS policies & updated_at trigger
+└── vercel.json            # Static routing, clean URLs & build hook
+```

@@ -157,12 +157,16 @@
   function updateSaveStatusDom() {
     const el = document.getElementById('saveStatus');
     const dot = document.getElementById('mobileSyncDot');
+    const homeBtn = document.getElementById('homeSyncBtn');
     const mode = syncStatus.mode || 'guest';
+    const dotCls = 'sync-dot ' + (mode === 'connected' ? 'connected' : mode === 'syncing' ? 'syncing' : mode === 'error' ? 'error' : '');
     if (el) {
-      el.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;"><span class="sync-dot ${mode === 'connected' ? 'connected' : mode === 'syncing' ? 'syncing' : mode === 'error' ? 'error' : ''}"></span><span>${escapeHtml(syncStatus.label || lastSavedText)}</span></span><span>${escapeHtml(lastSavedText.replace(/^Saved /, ''))}</span>`;
+      el.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;"><span class="${dotCls}"></span><span>${escapeHtml(syncStatus.label || lastSavedText)}</span></span><span>${escapeHtml(lastSavedText.replace(/^Saved /, ''))}</span>`;
     }
-    if (dot) {
-      dot.className = 'sync-dot ' + (mode === 'connected' ? 'connected' : mode === 'syncing' ? 'syncing' : mode === 'error' ? 'error' : '');
+    if (dot) dot.className = dotCls;
+    if (homeBtn) {
+      const lbl = mode === 'connected' ? (syncStatus.email ? syncStatus.email.split('@')[0] : 'Synced') : (syncStatus.configured ? 'Sign In' : 'Cloud Sync');
+      homeBtn.innerHTML = `<span class="${dotCls}"></span><span>${escapeHtml(lbl)}</span>`;
     }
   }
 
@@ -572,7 +576,7 @@
 
     const syncBtnLabel = syncStatus.mode === 'connected'
       ? `${syncStatus.email ? syncStatus.email.split('@')[0] : 'Synced'}`
-      : 'Cloud Sync';
+      : syncStatus.configured ? 'Sign In' : 'Cloud Sync';
 
     m.innerHTML = `
       <header class="home-header" data-enter="1">
@@ -583,9 +587,9 @@
         </div>
         <div class="home-header-actions">
           <button class="btn sm" onclick="openCmdModal()">${ICONS.search} Quick Jump <span class="kbd">Ctrl+K</span></button>
-          <button class="btn sm" onclick="openSyncModal()">
+          <button class="btn sm" id="homeSyncBtn" onclick="openSyncModal()">
             <span class="sync-dot ${syncStatus.mode === 'connected' ? 'connected' : syncStatus.mode === 'syncing' ? 'syncing' : ''}"></span>
-            ${escapeHtml(syncBtnLabel)}
+            <span>${escapeHtml(syncBtnLabel)}</span>
           </button>
           <div class="theme-seg">
             <button class="${state.theme === 'dark' ? 'active' : ''}" onclick="setTheme('dark')">${ICONS.moon}</button>
@@ -1342,20 +1346,26 @@
       </div>
       <div class="field-group">
         <label for="syncEmail">Email address</label>
-        <input id="syncEmail" type="email" placeholder="you@example.com" />
+        <input id="syncEmail" type="email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')handleAuthSubmit()" />
       </div>
       ${syncModeTab !== 'magic' ? `
       <div class="field-group">
-        <label for="syncPass">Password</label>
-        <input id="syncPass" type="password" placeholder="Minimum 6 characters" />
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <label for="syncPass">Password</label>
+          ${syncModeTab === 'signin' ? `<button type="button" onclick="handleResetPassword()" style="background:none;border:none;color:var(--action);font-size:12px;cursor:pointer;padding:0;">Forgot password?</button>` : ''}
+        </div>
+        <input id="syncPass" type="password" placeholder="Minimum 6 characters" onkeydown="if(event.key==='Enter')handleAuthSubmit()" />
       </div>` : ''}
+      <div id="syncInfoMsg" style="font-size:12.5px;color:var(--pos);margin-bottom:10px;display:none;"></div>
       <div id="syncErrMsg" style="font-size:12.5px;color:var(--neg);margin-bottom:10px;display:none;"></div>
       <button class="btn primary" style="width:100%;" onclick="handleAuthSubmit()">
-        ${syncModeTab === 'signin' ? 'Sign In & Sync Progress' : syncModeTab === 'signup' ? 'Create Account & Sync' : 'Send Magic Login Link'}
+        ${syncModeTab === 'signin' ? 'Sign In &amp; Sync Progress' : syncModeTab === 'signup' ? 'Create Account &amp; Sync' : 'Send Magic Login Link'}
       </button>
     ` : `
       <div class="banner-warn" style="margin-bottom:14px;">
-        <strong>Cloud Sync Setup Required:</strong> Paste your free Supabase Project URL &amp; Anon Key below (after running <code>supabase_schema.sql</code> in Supabase SQL Editor).
+        <strong>Connect Supabase Anon Key to enable Sign In:</strong><br/>
+        1. In Supabase -> <strong>Settings -> Integrations -> Vercel</strong>, click <strong>Add new project connection</strong> (then redeploy) — OR<br/>
+        2. Copy your <strong>Publishable / Anon Key</strong> from <strong>Settings -> API Keys</strong> and paste it below. Also run <code>supabase_schema.sql</code> in SQL Editor once.
       </div>
     `;
 
@@ -1369,8 +1379,8 @@
             <input id="cfgUrl" type="url" placeholder="https://xxxx.supabase.co" value="${escapeHtml(cfg.url)}" />
           </div>
           <div class="field-group">
-            <label for="cfgKey">Supabase Anon Public Key</label>
-            <input id="cfgKey" type="text" placeholder="eyJhbGci..." value="${escapeHtml(cfg.anonKey)}" />
+            <label for="cfgKey">Supabase Anon / Publishable Key</label>
+            <input id="cfgKey" type="text" placeholder="eyJhbGci... or sb_publishable_..." value="${escapeHtml(cfg.anonKey)}" />
           </div>
           <div style="display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;">
             <button class="btn sm accent" onclick="handleSaveSupaCfg()">Save Connection</button>
@@ -1387,7 +1397,7 @@
     const url = document.getElementById('cfgUrl')?.value || '';
     const key = document.getElementById('cfgKey')?.value || '';
     await window.BoardDeckSync.saveConfig(url, key);
-    showToast(url ? 'Supabase config saved.' : 'Supabase config cleared.', 'ok');
+    showToast(url && key ? 'Supabase config saved.' : 'Supabase config cleared.', 'ok');
     renderSyncModal();
   };
 
@@ -1395,18 +1405,58 @@
     const email = document.getElementById('syncEmail')?.value || '';
     const pass = document.getElementById('syncPass')?.value || '';
     const errBox = document.getElementById('syncErrMsg');
+    const infoBox = document.getElementById('syncInfoMsg');
     if (errBox) errBox.style.display = 'none';
+    if (infoBox) infoBox.style.display = 'none';
     try {
-      if (syncModeTab === 'signin') await window.BoardDeckSync.signInPassword(email, pass);
-      else if (syncModeTab === 'signup') await window.BoardDeckSync.signUpPassword(email, pass);
-      else await window.BoardDeckSync.sendMagicLink(email);
-      showToast(syncModeTab === 'magic' ? 'Magic link sent to your email.' : 'Signed in & synced!', 'ok');
+      if (syncModeTab === 'signin') {
+        await window.BoardDeckSync.signInPassword(email, pass);
+        showToast('Signed in & synced!', 'ok');
+      } else if (syncModeTab === 'signup') {
+        const res = await window.BoardDeckSync.signUpPassword(email, pass);
+        if (res && res.needsConfirmation) {
+          if (infoBox) {
+            infoBox.textContent = 'Account created! Check your inbox to verify your email before signing in.';
+            infoBox.style.display = 'block';
+          }
+          showToast('Confirmation email sent.', 'ok');
+          return;
+        }
+        showToast('Account created & synced!', 'ok');
+      } else {
+        await window.BoardDeckSync.sendMagicLink(email);
+        if (infoBox) {
+          infoBox.textContent = 'Magic sign-in link sent to your inbox.';
+          infoBox.style.display = 'block';
+        }
+        showToast('Magic link sent to your email.', 'ok');
+        return;
+      }
       renderSyncModal();
     } catch (e) {
       if (errBox) {
         errBox.textContent = e.message || String(e);
         errBox.style.display = 'block';
       }
+    }
+  };
+
+  window.handleResetPassword = async function () {
+    const email = (document.getElementById('syncEmail')?.value || '').trim();
+    const errBox = document.getElementById('syncErrMsg');
+    const infoBox = document.getElementById('syncInfoMsg');
+    if (errBox) errBox.style.display = 'none';
+    if (infoBox) infoBox.style.display = 'none';
+    if (!email) {
+      if (errBox) { errBox.textContent = 'Enter your email address first.'; errBox.style.display = 'block'; }
+      return;
+    }
+    try {
+      await window.BoardDeckSync.resetPassword(email);
+      if (infoBox) { infoBox.textContent = 'Password reset link sent to ' + email; infoBox.style.display = 'block'; }
+      showToast('Password reset email sent.', 'ok');
+    } catch (e) {
+      if (errBox) { errBox.textContent = e.message || String(e); errBox.style.display = 'block'; }
     }
   };
 

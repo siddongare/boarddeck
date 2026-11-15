@@ -1,4 +1,7 @@
 {
+  "framework": null,
+  "buildCommand": "node scripts/inject-env.mjs",
+  "outputDirectory": ".",
   "cleanUrls": true,
   "trailingSlash": false
 }

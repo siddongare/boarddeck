@@ -2,19 +2,23 @@
 (function () {
   const CFG_KEY = 'boarddeck_supabase_cfg';
 
+  function getEnvDefaults() {
+    const c = window.BOARDDECK_CONFIG || {};
+    return { url: (c.supabaseUrl || '').trim(), anonKey: (c.supabaseAnonKey || '').trim() };
+  }
+
   function getStoredConfig() {
     try {
-      if (window.BOARDDECK_CONFIG && window.BOARDDECK_CONFIG.supabaseUrl && window.BOARDDECK_CONFIG.supabaseAnonKey) {
-        return {
-          url: window.BOARDDECK_CONFIG.supabaseUrl,
-          anonKey: window.BOARDDECK_CONFIG.supabaseAnonKey,
-          source: 'env'
-        };
+      const env = getEnvDefaults();
+      if (env.url && env.anonKey) {
+        return { url: env.url, anonKey: env.anonKey, source: 'env' };
       }
       const raw = localStorage.getItem(CFG_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed.url && parsed.anonKey) return { ...parsed, source: 'local' };
+        if (parsed.url && parsed.anonKey) {
+          return { url: parsed.url.trim(), anonKey: parsed.anonKey.trim(), source: 'local' };
+        }
       }
     } catch (e) {}
     return null;
@@ -22,25 +26,40 @@
 
   let client = null;
   let sessionUser = null;
-  let syncStatus = { mode: 'guest', label: 'Local Only', email: null, lastSyncedAt: null, error: null };
+  let syncStatus = { mode: 'guest', label: 'Guest · Local Only', email: null, lastSyncedAt: null, error: null };
   let pushTimer = null;
-  let listeners = new Set();
+  let pulling = false;
+  const listeners = new Set();
 
   function emit() {
-    listeners.forEach(fn => { try { fn({ ...syncStatus, user: sessionUser, configured: !!getStoredConfig() }); } catch (e) {} });
+    const snap = window.BoardDeckSync.getStatus();
+    listeners.forEach(fn => { try { fn(snap); } catch (e) {} });
   }
 
   function mergeProgress(localState, cloudData) {
     if (!cloudData || typeof cloudData !== 'object') return localState;
-    const merged = {
-      conf: { ...(cloudData.conf || {}), ...(localState.conf || {}) },
-      mcqPick: { ...(cloudData.mcqPick || {}), ...(localState.mcqPick || {}) },
-      notes: { ...(cloudData.notes || {}), ...(localState.notes || {}) },
-      lastView: localState.lastView || cloudData.lastView || null,
-      lastFilters: localState.lastFilters || cloudData.lastFilters || null,
-      lastStreamViews: { ...(cloudData.lastStreamViews || {}), ...(localState.lastStreamViews || {}) }
+    const localTs = Number(localState.updatedAt || 0);
+    const cloudTs = Number(cloudData.updatedAt || 0);
+    const cloudNewer = cloudTs > localTs;
+
+    const mergeMap = (key) => {
+      const a = localState[key] || {};
+      const b = cloudData[key] || {};
+      return cloudNewer ? { ...a, ...b } : { ...b, ...a };
     };
-    return merged;
+
+    return {
+      mastery: mergeMap('mastery'),
+      attempts: mergeMap('attempts'),
+      revealed: mergeMap('revealed'),
+      notes: mergeMap('notes'),
+      mockAttempts: mergeMap('mockAttempts'),
+      mockRevealed: mergeMap('mockRevealed'),
+      theme: cloudNewer ? (cloudData.theme || localState.theme || 'dark') : (localState.theme || cloudData.theme || 'dark'),
+      sidebarCollapsed: cloudNewer ? !!(cloudData.sidebarCollapsed ?? localState.sidebarCollapsed) : !!(localState.sidebarCollapsed ?? cloudData.sidebarCollapsed),
+      lastActive: cloudNewer ? (cloudData.lastActive || localState.lastActive || null) : (localState.lastActive || cloudData.lastActive || null),
+      updatedAt: Math.max(localTs, cloudTs, Date.now())
+    };
   }
 
   async function initClient() {
@@ -55,12 +74,17 @@
     try {
       if (!client) {
         const mod = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
-        client = mod.createClient(cfg.url.trim(), cfg.anonKey.trim());
-        client.auth.onAuthStateChange((_ev, session) => {
+        client = mod.createClient(cfg.url, cfg.anonKey, {
+          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+        });
+        client.auth.onAuthStateChange((ev, session) => {
           sessionUser = session?.user || null;
           if (sessionUser) {
-            syncStatus = { mode: 'connected', label: 'Cloud Ready', email: sessionUser.email, lastSyncedAt: syncStatus.lastSyncedAt, error: null };
-            window.BoardDeckSync.pullAndMerge();
+            syncStatus = { mode: 'connected', label: 'Synced', email: sessionUser.email, lastSyncedAt: syncStatus.lastSyncedAt, error: null };
+            emit();
+            if (ev === 'SIGNED_IN' || ev === 'INITIAL_SESSION') {
+              window.BoardDeckSync.pullAndMerge();
+            }
           } else {
             syncStatus = { mode: 'signed_out', label: 'Sign in to Sync', email: null, lastSyncedAt: null, error: null };
             emit();
@@ -70,7 +94,7 @@
       const { data } = await client.auth.getSession();
       sessionUser = data?.session?.user || null;
       if (sessionUser) {
-        syncStatus = { mode: 'connected', label: 'Synced', email: sessionUser.email, lastSyncedAt: null, error: null };
+        syncStatus = { mode: 'connected', label: 'Synced', email: sessionUser.email, lastSyncedAt: syncStatus.lastSyncedAt, error: null };
       } else {
         syncStatus = { mode: 'signed_out', label: 'Sign in to Sync', email: null, lastSyncedAt: null, error: null };
       }
@@ -85,7 +109,17 @@
 
   window.BoardDeckSync = {
     onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
-    getStatus() { return { ...syncStatus, user: sessionUser, configured: !!getStoredConfig(), config: getStoredConfig() }; },
+
+    getStatus() {
+      const stored = getStoredConfig();
+      const env = getEnvDefaults();
+      return {
+        ...syncStatus,
+        user: sessionUser,
+        configured: !!stored,
+        config: stored || { url: env.url, anonKey: env.anonKey, source: 'none' }
+      };
+    },
 
     async init() {
       await initClient();
@@ -104,7 +138,7 @@
 
     async signInPassword(email, password) {
       const c = await initClient();
-      if (!c) throw new Error('Supabase is not configured yet.');
+      if (!c) throw new Error('Supabase Anon Key is not configured yet.');
       const { data, error } = await c.auth.signInWithPassword({ email: email.trim(), password });
       if (error) throw error;
       sessionUser = data.user;
@@ -114,17 +148,24 @@
 
     async signUpPassword(email, password) {
       const c = await initClient();
-      if (!c) throw new Error('Supabase is not configured yet.');
-      const { data, error } = await c.auth.signUp({ email: email.trim(), password });
+      if (!c) throw new Error('Supabase Anon Key is not configured yet.');
+      const { data, error } = await c.auth.signUp({
+        email: email.trim(),
+        password,
+        options: { emailRedirectTo: window.location.origin + window.location.pathname }
+      });
       if (error) throw error;
-      sessionUser = data.user;
-      if (sessionUser) await this.pullAndMerge();
-      return data;
+      if (data.session && data.user) {
+        sessionUser = data.user;
+        await this.pullAndMerge();
+        return { ...data, needsConfirmation: false };
+      }
+      return { ...data, needsConfirmation: true };
     },
 
     async sendMagicLink(email) {
       const c = await initClient();
-      if (!c) throw new Error('Supabase is not configured yet.');
+      if (!c) throw new Error('Supabase Anon Key is not configured yet.');
       const { error } = await c.auth.signInWithOtp({
         email: email.trim(),
         options: { emailRedirectTo: window.location.origin + window.location.pathname }
@@ -132,15 +173,31 @@
       if (error) throw error;
     },
 
+    async resetPassword(email) {
+      const c = await initClient();
+      if (!c) throw new Error('Supabase Anon Key is not configured yet.');
+      const { error } = await c.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: window.location.origin + window.location.pathname
+      });
+      if (error) throw error;
+    },
+
     async signOut() {
       if (client) await client.auth.signOut();
       sessionUser = null;
-      syncStatus = { mode: getStoredConfig() ? 'signed_out' : 'guest', label: getStoredConfig() ? 'Sign in to Sync' : 'Guest · Local Only', email: null, lastSyncedAt: null, error: null };
+      syncStatus = {
+        mode: getStoredConfig() ? 'signed_out' : 'guest',
+        label: getStoredConfig() ? 'Sign in to Sync' : 'Guest · Local Only',
+        email: null,
+        lastSyncedAt: null,
+        error: null
+      };
       emit();
     },
 
     async pullAndMerge() {
-      if (!client || !sessionUser || !window.__getBoardDeckState) return;
+      if (!client || !sessionUser || !window.__getBoardDeckState || pulling) return;
+      pulling = true;
       syncStatus = { ...syncStatus, mode: 'syncing', label: 'Syncing...', error: null };
       emit();
       try {
@@ -160,11 +217,25 @@
           .upsert({ user_id: sessionUser.id, email: sessionUser.email, progress_data: merged }, { onConflict: 'user_id' });
         if (upErr) throw upErr;
 
-        syncStatus = { mode: 'connected', label: 'Cloud Synced', email: sessionUser.email, lastSyncedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), error: null };
+        syncStatus = {
+          mode: 'connected',
+          label: 'Cloud Synced',
+          email: sessionUser.email,
+          lastSyncedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          error: null
+        };
         emit();
       } catch (err) {
-        syncStatus = { mode: 'error', label: 'Sync Error', email: sessionUser.email, lastSyncedAt: syncStatus.lastSyncedAt, error: String(err.message || err) };
+        syncStatus = {
+          mode: 'error',
+          label: 'Sync Error',
+          email: sessionUser.email,
+          lastSyncedAt: syncStatus.lastSyncedAt,
+          error: String(err.message || err)
+        };
         emit();
+      } finally {
+        pulling = false;
       }
     },
 
@@ -180,10 +251,22 @@
             .from('boarddeck_profiles')
             .upsert({ user_id: sessionUser.id, email: sessionUser.email, progress_data: payload }, { onConflict: 'user_id' });
           if (error) throw error;
-          syncStatus = { mode: 'connected', label: 'Cloud Synced', email: sessionUser.email, lastSyncedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), error: null };
+          syncStatus = {
+            mode: 'connected',
+            label: 'Cloud Synced',
+            email: sessionUser.email,
+            lastSyncedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            error: null
+          };
           emit();
         } catch (err) {
-          syncStatus = { mode: 'error', label: 'Sync Error', email: sessionUser.email, lastSyncedAt: syncStatus.lastSyncedAt, error: String(err.message || err) };
+          syncStatus = {
+            mode: 'error',
+            label: 'Sync Error',
+            email: sessionUser.email,
+            lastSyncedAt: syncStatus.lastSyncedAt,
+            error: String(err.message || err)
+          };
           emit();
         }
       }, 900);
