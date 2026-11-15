@@ -102,7 +102,7 @@
       overflow: hidden;
       border-right: none;
     }
-    .sidebar-expand-btn {
+    body:not(.sidebar-collapsed) .sidebar-expand-btn {
       display: none;
     }
     body.sidebar-collapsed .sidebar-expand-btn {
@@ -1042,7 +1042,7 @@
               Restore <input type="file" accept="application/json" onchange="importBackup(this)" style="display:none" />
             </label>
           </div>
-          <div class="save-status mono">Saved locally · ${masteredCount} mastered · ${notesCount} notes</div>
+          <div class="save-status mono">${masteredCount} mastered · ${notesCount} notes saved</div>
         </div>
       `;
     }
