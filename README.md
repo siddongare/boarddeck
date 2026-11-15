@@ -1,83 +1,57 @@
-<p align="center">
-  <img src="assets/logo.svg" width="56" height="56" alt="BoardDeck logo" />
-</p>
+# BoardDeck — HSC Class 12 PYQ & Mock Exam Workspace
 
-<h1 align="center">BoardDeck · HSC Class 12</h1>
+BoardDeck is a static workspace for preparing Maharashtra State Board (MSBSHSE) Class 12 exams across the compulsory Science streams and bifocal electives. Each subject stays isolated with its own chapter index, slot strategy, past papers, review queue, and mock exam timer.
 
-<p align="center">
-  Maharashtra HSC (MSBSHSE) board PYQ workspace for <strong>Computer Science (D-9)</strong> and <strong>Electronics (C-2)</strong>.<br />
-  <a href="https://hsc-cs.vercel.app"><strong>hsc-cs.vercel.app</strong></a>
-</p>
+## What's Inside
 
----
+- **Compulsory Core (2022–2026 Revised Syllabus · 8 Official Papers each)**
+  - **Physics (`54`):** 442 questions across 16 units (70M theory pattern)
+  - **Chemistry (`55`):** 581 questions across 16 units (70M theory + `\ce{}` chemical equations and structure MCQs)
+  - **Mathematics & Statistics (`40`):** 357 questions across 15 chapters (Part I & II, 80M pattern, AsciiMath + theorem drills)
+  - **English (`01`):** 267 questions mapped into Prose, Poetry & Appreciation templates, Writing Skills (`Q.4` A–D), and Novel (`4.1–4.4`, 80M pattern)
+- **Bifocal Electives (200-Mark Streams)**
+  - **Computer Science (`D-9`):** 963 PYQs across CS1 & CS2 (2015–2026 official + pre-2015 scan links)
+  - **Electronics (`C-2`):** 256 PYQs across Applied & Digital Electronics with circuit SVG diagrams and Boolean overlines
 
-## Why I built this
+Total dataset: **2,866 chapter-mapped questions** with **1,034 repeat flags** across **6 subjects**. Datasets lazy-load per subject from `data/<stream>.json` so the landing page loads fast and only fetches what you open.
 
-Most HSC board prep tools dump unorganized PDFs or force CS and Electronics students onto mixed pages. During Class 12 prep (especially while juggling JEE or CET), you do not have time to guess which chapters actually fill `Q.2(B)`, `Q.4(B)`, or `Q.5`.
+## Screenshots
 
-**BoardDeck** separates each subject into its own isolated workspace—chapters, paper-slot strategies, repeat frequencies, timed mock papers, review queues, and personal notebook notes stay strictly scoped per stream.
-
----
-
-## Covered Subjects (1,219 Questions Total)
-
-### Computer Science · Code D-9 (`963` Questions · `24` Papers)
-- **Coverage:** 2015–2026 March & July CS1 & CS2 papers sourced from Shaalaa, plus links to 2011–2014 scanned papers.
-- **CS1 Chapters:** Operating System, Data Structures, C++ Programming, HTML (Web Designing).
-- **CS2 Chapters:** 8085 Microprocessor Org, 8085 Instruction Set & ALP, Intel x86 Family, 8051 Microcontroller, Networking Technology.
-- **Slot Edge:** `Q.5` (10M compulsory out of 15M) has always been 2 C++ programs + 1 HTML page (`45` C++ and `24` HTML across 12 CS1 papers). In CS2, `71/72` Q.5 questions are 8085 Assembly programs.
-
-### Electronics · Code C-2 (`256` Questions · `8` Papers)
-- **Coverage:** 2020 March (`V-233` / `V-267`), 2023 March (`V-553` / `V-587`), 2025 March (`V-53` / `V-87`), and 2026 March (`V-733` / `V-767`) sourced from official MSBSHSE PDFs via AglaSem, Zollege, Collegedunia, TechNiyojan, and Vidyasagar Academy (Shaalaa currently hosts syllabus only for Electronics).
-- **Paper I (Applied Electronics):** Instruments, DC Power Supplies, Transducers & Sensors, Operational Amplifiers, Modern Comm. Systems, Integrated Circuits (555).
-- **Paper II (Digital Electronics):** Number Systems, Logic Gates & Boolean Algebra, Logic Families, Combinational Circuits, Flip-Flops & Counters, A/D & D/A Converters, Computer Fundamentals.
-- **Slot Edge:** In Paper I, Operational Amplifiers appeared in `4/4` indexed papers in both `Q.2(B)` and `Q.4(B)` 4M blocks. In Paper II, Flip-Flops + Combinational Circuits (MUX/DEMUX) + ADC/DAC dominate `Q.5(A)` and `Q.5(B)`.
-
----
+| Home & Subject Switcher | Overview & Slot Strategy | Chapter Drill (`\ce{}` & Solutions) |
+| --- | --- | --- |
+| ![Home](assets/home.png) | ![Overview](assets/overview.png) | ![Chapter Drill](assets/chapter-drill.png) |
 
 ## Features
 
-- **Strict Subject Isolation:** Pick CS or Electronics on the landing page. Switching streams never bleeds filters, chapters, mock dropdowns, or review queues.
-- **Interactive Active Recall:** MCQs let you guess first before grading; derivations and circuit answers stay collapsed behind a reveal toggle (`R`).
-- **Repeat Detection (`Asked Nx`):** Conceptually matching questions across distinct exam years are clustered so high-frequency patterns sort first.
-- **Isolated Mock Mode:** Timed 3-hour full board papers sorted strictly `Q.1 -> Q.5` without leaking chapter mastery.
-- **Personal Notes & Photo Uploads:** Save concise board answers or notebook photos right inside any card (`localStorage`), with JSON backup/restore.
+- **Hidden answers by default:** Attempt MCQs first to see instant right/wrong verification, or press `R` to reveal solutions on theory/numerical questions.
+- **MathJax & code isolation:** Renders AsciiMath vectors, matrices, integrals, and LaTeX `mhchem` formulas in Physics, Chemistry, and Maths while leaving HTML, C++, and 8085 Assembly code untouched.
+- **Paper-slot strategy:** Shows chapter weightage alongside high-ROI exam shortcuts (e.g., CS1 `Q.5` HTML vs C++ pairing, English `Q.4` template selection).
+- **Isolated mock papers:** Sorted in paper order (`Q.1` through the last long answer) with a 3-hour countdown timer and separate mock state so practice history doesn't spoil your simulation.
+- **Keyboard shortcuts:** `J` / `K` move between questions, `1–4` answer MCQs, `R` reveals solutions, `M` marks mastered, `F` sends to review, and `Ctrl+K` opens quick jump.
+- **Cloud Sync + Offline Guest fallback:** Works out of the box via `localStorage`, or connects to Supabase Auth + Postgres for cross-device sync.
 
-<p align="center">
-  <img src="assets/home.png" width="49%" alt="BoardDeck Subject Picker" />
-  <img src="assets/overview.png" width="49%" alt="Electronics Workspace & Slot Matrix" />
-</p>
+## Running Locally
 
-<p align="center">
-  <img src="assets/chapter-drill.png" width="72%" alt="Electronics Op-Amps Active Recall View" />
-</p>
-
----
-
-## Keyboard Shortcuts
-
-- `J` / `K` — Next / previous question
-- `R` — Reveal / hide solution
-- `1`–`4` — Pick MCQ option
-- `M` — Mark Mastered
-- `F` — Flag for Review Queue
-
----
-
-## Local Setup
-
-Static single-page build (`index.html`, zero runtime dependencies):
+Because `data/*.json` files are loaded over `fetch()`, serve the folder using any static HTTP server:
 
 ```bash
-git clone https://github.com/siddongare/hsc-cs.git
-cd hsc-cs
 python -m http.server 8000
 ```
 
-Then open `http://localhost:8000`. Progress stays in browser `localStorage` under `boarddeck_hsc_v1` (existing `hsc_cs_trainer_v3`/`v2` saves migrate automatically).
+Then open `http://localhost:8000/`.
 
----
+## Optional Cloud Sync Setup (Supabase)
 
-## Attribution & License
+1. Create a free project on [Supabase](https://supabase.com/).
+2. Open the **SQL Editor** and execute the contents of [`supabase_schema.sql`](supabase_schema.sql). This creates the `boarddeck_profiles` table with Row Level Security so users only read and write their own progress row.
+3. Click **Cloud Sync** in the top bar (or sidebar), expand **Supabase Project Connection**, and paste your **Project URL** and **Anon Public Key** (or hardcode them in `assets/sync.js` if hosting for friends).
+4. Sign in with Email + Password or Magic Link. Cloud and local progress merge automatically without overwriting mastered questions.
 
-Question text, schematics, and solution references belong to MSBSHSE and their respective open archives (Shaalaa, AglaSem, Zollege, Collegedunia, TechNiyojan, and Vidyasagar Academy). Built purely as a personal non-commercial revision workspace. Code licensed under the [MIT License](LICENSE).
+## File Layout
+
+- `index.html` — Lean shell, MathJax 3 startup config, and modal containers
+- `assets/styles.css` — Dark/light theme tokens, layout grids, responsive drawer, and motion timing
+- `assets/app.js` — Lazy stream loader, filters, mock paper engine, keyboard navigation, and sync wiring
+- `assets/sync.js` — Optional Supabase client, merge logic, and offline guest fallback
+- `data/*.json` — Lightweight `manifest.json` + isolated per-subject datasets (`phy`, `chem`, `math`, `eng`, `cs`, `el`)
+- `supabase_schema.sql` — Postgres table, trigger, and RLS policies for Cloud Sync
