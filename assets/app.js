@@ -813,7 +813,7 @@
             <span class="tag mono">HSC 12</span>
           </div>
           <div class="home-header-actions">
-            <button class="btn sm" onclick="openCmdModal()">${ICONS.search} Jump <span class="kbd">Ctrl+K</span></button>
+            <button class="btn sm" onclick="openCmdModal()" aria-label="Search subjects or chapters">${ICONS.search} <span class="hide-xs">Jump</span> <span class="kbd">Ctrl+K</span></button>
             <button class="btn sm" id="homeSyncBtn" onclick="openSyncModal()">
               <span class="sync-dot ${syncStatus.mode === 'connected' ? 'connected' : syncStatus.mode === 'syncing' ? 'syncing' : ''}"></span>
               <span>${escapeHtml(syncBtnLabel)}</span>
