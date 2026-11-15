@@ -146,6 +146,21 @@
       return data;
     },
 
+    async signInGoogle() {
+      const c = await initClient();
+      if (!c) throw new Error('Supabase Anon Key is not configured yet.');
+      const redirectTo = window.location.origin + window.location.pathname;
+      const { data, error } = await c.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          queryParams: { prompt: 'select_account' }
+        }
+      });
+      if (error) throw error;
+      return data;
+    },
+
     async signUpPassword(email, password) {
       const c = await initClient();
       if (!c) throw new Error('Supabase Anon Key is not configured yet.');

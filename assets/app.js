@@ -59,24 +59,25 @@
   const STREAM_CACHE = {};
   let ACTIVE_STREAM = null;
 
-  /* ── Zero-Lag Optional liquidGL Header Refractor (Desktop Home Only) ── */
+  /* ── Zero-Lag Optional liquidGL Multi-Lens Refractor (Desktop Home Only) ── */
   let liquidGLLoadPromise = null;
-  let activeGlassLens = null;
+  let activeGlassLenses = [];
   let glassMountTimer = null;
   let glassResizeTimer = null;
   let glassResizeBound = false;
 
   function glassTintForTheme() {
     return document.body.classList.contains('light')
-      ? 'rgba(255, 255, 255, 0.62)'
-      : 'rgba(14, 15, 20, 0.56)';
+      ? 'rgba(255, 255, 255, 0.52)'
+      : 'rgba(13, 17, 26, 0.46)';
   }
 
   function canRunLiquidGL() {
     if (typeof window === 'undefined') return false;
     if (window.innerWidth < 900) return false;
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
-    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) return false;
+    if (navigator.connection && navigator.connection.saveData) return false;
+    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 2) return false;
     return true;
   }
 
@@ -85,15 +86,17 @@
       clearTimeout(glassMountTimer);
       glassMountTimer = null;
     }
-    if (activeGlassLens) {
-      try {
-        if (Array.isArray(activeGlassLens)) {
-          activeGlassLens.forEach((l) => l && typeof l.destroy === 'function' && l.destroy());
-        } else if (typeof activeGlassLens.destroy === 'function') {
-          activeGlassLens.destroy();
-        }
-      } catch (_) {}
-      activeGlassLens = null;
+    if (activeGlassLenses.length) {
+      for (const lens of activeGlassLenses) {
+        try {
+          if (Array.isArray(lens)) {
+            lens.forEach((l) => l && typeof l.destroy === 'function' && l.destroy());
+          } else if (lens && typeof lens.destroy === 'function') {
+            lens.destroy();
+          }
+        } catch (_) {}
+      }
+      activeGlassLenses = [];
     }
   }
 
@@ -125,7 +128,7 @@
         }
         clearTimeout(glassResizeTimer);
         glassResizeTimer = setTimeout(() => {
-          if (view === 'home' && canRunLiquidGL() && !activeGlassLens) mountHomeGlass();
+          if (view === 'home' && canRunLiquidGL() && !activeGlassLenses.length) mountHomeGlass();
         }, 220);
       }, { passive: true });
     }
@@ -135,31 +138,56 @@
       glassMountTimer = setTimeout(async () => {
         glassMountTimer = null;
         if (view !== 'home' || !canRunLiquidGL()) return;
-        const pane = document.querySelector('.liquid-gl-pane');
+        const headerPane = document.querySelector('.liquid-gl-pane');
+        const cardPane = document.querySelector('.hero-demo-glass');
         const stage = document.querySelector('.home-stage');
-        if (!pane || !stage) return;
+        if (!stage || (!headerPane && !cardPane)) return;
         try {
           await loadLiquidGLOnce();
           if (view !== 'home' || !canRunLiquidGL() || typeof window.liquidGL !== 'function') return;
-          if (!document.body.contains(pane)) return;
-          activeGlassLens = window.liquidGL({
-            target: '.liquid-gl-pane',
-            snapshot: '.home-stage',
-            zIndex: 1,
-            resolution: 1.0,
-            refraction: 0.014,
-            bevelDepth: 0.055,
-            bevelWidth: 0.16,
-            frost: 2,
-            shadow: false,
-            specular: false,
-            reveal: 'fade',
-            tilt: false,
-            interaction: 'none',
-            tint: glassTintForTheme(),
-          });
+          const tint = glassTintForTheme();
+          if (headerPane && document.body.contains(headerPane)) {
+            const headerLens = window.liquidGL({
+              target: '.liquid-gl-pane',
+              snapshot: '.home-stage',
+              zIndex: 1,
+              resolution: 1.0,
+              refraction: 0.022,
+              aberration: 0.01,
+              bevelDepth: 0.085,
+              bevelWidth: 0.22,
+              frost: 1.8,
+              shadow: true,
+              specular: true,
+              reveal: 'fade',
+              tilt: false,
+              interaction: 'none',
+              tint,
+            });
+            if (headerLens) activeGlassLenses.push(headerLens);
+          }
+          if (cardPane && document.body.contains(cardPane)) {
+            const cardLens = window.liquidGL({
+              target: '.hero-demo-glass',
+              snapshot: '.home-stage',
+              zIndex: 1,
+              resolution: 1.0,
+              refraction: 0.026,
+              aberration: 0.014,
+              bevelDepth: 0.11,
+              bevelWidth: 0.24,
+              frost: 2.2,
+              shadow: true,
+              specular: true,
+              reveal: 'fade',
+              tilt: false,
+              interaction: 'none',
+              tint,
+            });
+            if (cardLens) activeGlassLenses.push(cardLens);
+          }
         } catch (_) {
-          // Graceful fallback: CSS backdrop-filter remains active
+          // Graceful fallback: specular CSS backdrop-filter remains active
         }
       }, 120);
     };
@@ -494,7 +522,8 @@
   async function applyHash() {
     if (!MANIFEST) return;
     const raw = (location.hash || '').replace(/^#/, '');
-    if (!raw || raw === 'home') {
+    const isOAuthCallback = /^(access_token=|refresh_token=|error=|error_description=|type=)/.test(raw);
+    if (!raw || raw === 'home' || isOAuthCallback) {
       routeStream = null;
       view = 'home';
       render();
@@ -658,13 +687,12 @@
       `;
     }
 
-    const sample = HERO_SAMPLES[heroTabIdx] || HERO_SAMPLES[0];
     const renderStreamCard = (st) => {
       const mCnt = st.uids.filter(id => state.mastery[id] === 'mastered').length;
       const pct = st.questionCount ? Math.round(100 * mCnt / st.questionCount) : 0;
       const mcqAtt = Object.keys(st.mcqUids).filter(id => state.attempts[id] !== undefined);
       const mcqOk = mcqAtt.filter(id => state.attempts[id] === st.mcqUids[id]).length;
-      const mcqStr = mcqAtt.length ? `${mcqOk}/${mcqAtt.length}` : `${st.mcqCount} ready`;
+      const mcqStr = mcqAtt.length ? `${mcqOk}/${mcqAtt.length}` : `${st.mcqCount} MCQs`;
 
       return `
         <div class="subj-card" onclick="openStream('${st.id}','overview')" role="button" tabindex="0" onkeydown="if(event.key==='Enter')openStream('${st.id}','overview')">
@@ -677,22 +705,55 @@
             <p class="subj-desc">${escapeHtml(st.tagline)}</p>
           </div>
           <div class="subj-metrics">
-            <div><div class="subj-metric-val">${st.questionCount}</div><div class="subj-metric-lbl">Board Qs (${st.repeatCount} rep)</div></div>
+            <div><div class="subj-metric-val">${st.questionCount}</div><div class="subj-metric-lbl">${st.repeatCount} repeated</div></div>
             <div><div class="subj-metric-val">${pct}%</div><div class="subj-metric-lbl">${mCnt} mastered</div></div>
-            <div><div class="subj-metric-val">${mcqStr}</div><div class="subj-metric-lbl">MCQs</div></div>
+            <div><div class="subj-metric-val">${mcqStr}</div><div class="subj-metric-lbl">Objective</div></div>
           </div>
           <div class="subj-actions" onclick="event.stopPropagation()">
-            <button class="btn primary" onclick="openStream('${st.id}','overview')">Open ${escapeHtml(st.short)} ${ICONS.arrow}</button>
-            <button class="btn" onclick="openStream('${st.id}','mock')">Mock (${st.papersCount})</button>
-            <button class="btn" onclick="openStream('${st.id}','chapter')">Drill</button>
+            <button class="btn" onclick="openStream('${st.id}','overview')">Open ${escapeHtml(st.short)} ${ICONS.arrow}</button>
+            <div style="display:flex;gap:8px;">
+              <button class="btn sm" onclick="openStream('${st.id}','mock')">Mock (${st.papersCount})</button>
+              <button class="btn sm" onclick="openStream('${st.id}','chapter')">Drill</button>
+            </div>
           </div>
         </div>
       `;
     };
 
+    function buildHeroDemoInner() {
+      const sample = HERO_SAMPLES[heroTabIdx] || HERO_SAMPLES[0];
+      return `
+        <div class="hero-demo-top">
+          <div class="seg-tabs" role="tablist">
+            <div class="seg-ind"></div>
+            ${HERO_SAMPLES.map((s, idx) => `<button class="seg-tab" role="tab" aria-selected="${idx === heroTabIdx}" onclick="setHeroTab(${idx})">${escapeHtml(s.tab)}</button>`).join('')}
+          </div>
+          <span class="tag mono" style="font-size:11px;">${escapeHtml(sample.tag)}</span>
+        </div>
+        <div class="demo-q">${sample.prompt}</div>
+        <div class="demo-opts">
+          ${sample.options.map((opt, idx) => {
+            let cls = 'demo-opt';
+            if (heroDemoAnswer !== null) {
+              if (idx === sample.correct) cls += ' correct';
+              else if (idx === heroDemoAnswer) cls += ' wrong';
+            }
+            return `<button class="${cls}" onclick="pickHeroOpt(${idx})"><span class="mono" style="margin-right:6px;opacity:.65;">${idx + 1}.</span>${opt}</button>`;
+          }).join('')}
+        </div>
+        <div class="demo-foot">
+          <span>${heroDemoAnswer === null ? 'Select an option to check solution' : sample.explain}</span>
+          <span class="mono" style="flex-shrink:0;opacity:.75;">1–4</span>
+        </div>
+      `;
+    }
+    window._buildHeroDemoInner = buildHeroDemoInner;
+
     const syncBtnLabel = syncStatus.mode === 'connected'
       ? `${syncStatus.email ? syncStatus.email.split('@')[0] : 'Synced'}`
       : syncStatus.configured ? 'Sign In' : 'Cloud Sync';
+
+    const repeatTotal = MANIFEST.streams.reduce((a, s) => a + s.repeatCount, 0);
 
     m.innerHTML = `
       <header class="home-header" data-enter="1" data-liquid-ignore>
@@ -704,78 +765,98 @@
             <span class="tag mono">HSC 12</span>
           </div>
           <div class="home-header-actions">
-            <button class="btn sm" onclick="openCmdModal()">${ICONS.search} Quick Jump <span class="kbd">Ctrl+K</span></button>
+            <button class="btn sm" onclick="openCmdModal()">${ICONS.search} Jump <span class="kbd">Ctrl+K</span></button>
             <button class="btn sm" id="homeSyncBtn" onclick="openSyncModal()">
               <span class="sync-dot ${syncStatus.mode === 'connected' ? 'connected' : syncStatus.mode === 'syncing' ? 'syncing' : ''}"></span>
               <span>${escapeHtml(syncBtnLabel)}</span>
             </button>
             <div class="theme-seg">
-              <button class="${state.theme === 'dark' ? 'active' : ''}" onclick="setTheme('dark')">${ICONS.moon}</button>
-              <button class="${state.theme === 'light' ? 'active' : ''}" onclick="setTheme('light')">${ICONS.sun}</button>
+              <button class="${state.theme === 'dark' ? 'active' : ''}" onclick="setTheme('dark')" aria-label="Dark theme">${ICONS.moon}</button>
+              <button class="${state.theme === 'light' ? 'active' : ''}" onclick="setTheme('light')" aria-label="Light theme">${ICONS.sun}</button>
             </div>
           </div>
         </div>
       </header>
 
       <div class="home-stage">
-      <section class="hero-split">
-        <div class="home-hero">
-          <h1 data-enter="2">Maharashtra HSC past papers, mapped by chapter and weightage.</h1>
-          <p data-enter="3">Inspect repeat questions, drill chapter-wise MCQs with full steps, and simulate 3-hour papers across all six compulsory and bifocal streams.</p>
-          <div class="hero-cta-row" data-enter="4">
-            <button class="btn primary" onclick="openStream('phy','overview')">Start Practicing ${ICONS.arrow}</button>
-            <button class="btn" onclick="openSyncModal()">${ICONS.cloud} Sync Progress</button>
+        <section class="hero-screen">
+          <div class="hero-optical-bg" aria-hidden="true">
+            <div class="hero-optical-grid"></div>
+            <svg class="hero-optical-beam" viewBox="0 0 680 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="beamLineA" x1="0" y1="60" x2="680" y2="340" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#38bdf8" stop-opacity="0"/>
+                  <stop offset="48%" stop-color="#38bdf8" stop-opacity="0.82"/>
+                  <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+                </linearGradient>
+                <linearGradient id="beamLineB" x1="40" y1="420" x2="640" y2="110" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#0284c7" stop-opacity="0"/>
+                  <stop offset="52%" stop-color="#38bdf8" stop-opacity="0.58"/>
+                  <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+                </linearGradient>
+                <radialGradient id="prismCore" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.24"/>
+                  <stop offset="55%" stop-color="#0284c7" stop-opacity="0.08"/>
+                  <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+              <circle cx="360" cy="240" r="210" fill="url(#prismCore)"/>
+              <path d="M 30 130 C 210 130, 320 290, 650 220" stroke="url(#beamLineA)" stroke-width="2"/>
+              <path d="M 10 310 C 220 260, 390 120, 670 165" stroke="url(#beamLineB)" stroke-width="1.5"/>
+              <path d="M 60 400 L 640 70" stroke="url(#beamLineA)" stroke-width="1.2" stroke-dasharray="5 6"/>
+              <circle cx="360" cy="230" r="108" stroke="#38bdf8" stroke-opacity="0.34" stroke-width="1.2"/>
+              <circle cx="360" cy="230" r="182" stroke="#38bdf8" stroke-opacity="0.18" stroke-width="1"/>
+            </svg>
           </div>
-          <div class="hero-proof" data-enter="5">
-            <span><strong>${totalQs.toLocaleString()}</strong> board questions</span>
-            <span><strong>6</strong> HSC streams</span>
-            <span><strong>${MANIFEST.streams.reduce((a, s) => a + s.repeatCount, 0).toLocaleString()}</strong> repeat flags</span>
-            <span><strong>LaTeX + Code</strong> isolated per subject</span>
-          </div>
-        </div>
 
-        <div class="hero-demo ${sample.isMath ? 'tex2jax_process' : 'tex2jax_ignore'}" data-enter="3">
-          <div class="hero-demo-top">
-            <div class="seg-tabs" role="tablist">
-              <div class="seg-ind"></div>
-              ${HERO_SAMPLES.map((s, idx) => `<button class="seg-tab" role="tab" aria-selected="${idx === heroTabIdx}" onclick="setHeroTab(${idx})">${escapeHtml(s.tab)}</button>`).join('')}
+          <div class="hero-split">
+            <div class="home-hero">
+              <div class="hero-eyebrow" data-enter="1">
+                <span class="dot"></span>
+                <span>Maharashtra State Board · Class 12 Science &amp; Bifocal</span>
+              </div>
+              <h1 data-enter="2">Maharashtra HSC papers, mapped to the mark</h1>
+              <p data-enter="3">Drill chapter-mapped PYQs, spot repeat patterns, and practice 3-hour board mocks across six isolated exam streams.</p>
+              <div class="hero-cta-row" data-enter="4">
+                <button class="btn primary" onclick="document.getElementById('subjectsDirectory')?.scrollIntoView({behavior:'smooth'})">Explore Subjects ${ICONS.arrow}</button>
+                <button class="btn" onclick="openSyncModal()">${ICONS.cloud} ${syncStatus.user ? 'Cloud Synced' : 'Sign In with Google'}</button>
+              </div>
+              <div class="hero-proof" data-enter="5">
+                <div><div class="hero-proof-val mono">${totalQs.toLocaleString()}</div><div class="hero-proof-lbl">Board questions</div></div>
+                <div><div class="hero-proof-val mono">6</div><div class="hero-proof-lbl">Isolated streams</div></div>
+                <div><div class="hero-proof-val mono">${repeatTotal.toLocaleString()}</div><div class="hero-proof-lbl">Repeat flags</div></div>
+                <div><div class="hero-proof-val mono">2015–26</div><div class="hero-proof-lbl">Official papers</div></div>
+              </div>
             </div>
-            <span class="tag mono" style="font-size:11px;">${escapeHtml(sample.tag)}</span>
-          </div>
-          <div class="demo-q">${sample.prompt}</div>
-          <div class="demo-opts">
-            ${sample.options.map((opt, idx) => {
-              let cls = 'demo-opt';
-              if (heroDemoAnswer !== null) {
-                if (idx === sample.correct) cls += ' correct';
-                else if (idx === heroDemoAnswer) cls += ' wrong';
-              }
-              return `<button class="${cls}" onclick="pickHeroOpt(${idx})"><span class="mono" style="margin-right:6px;opacity:.65;">${idx + 1}.</span>${opt}</button>`;
-            }).join('')}
-          </div>
-          <div class="demo-foot">
-            <span>${heroDemoAnswer === null ? 'Select an option to test instant check' : sample.explain}</span>
-          </div>
-        </div>
-      </section>
 
-      ${resumeHtml}
+            <div class="hero-demo" data-enter="3" data-liquid-ignore>
+              <div class="hero-demo-glass" aria-hidden="true"></div>
+              <div class="hero-demo-inner tex2jax_ignore" id="heroDemoInner">
+                ${buildHeroDemoInner()}
+              </div>
+            </div>
+          </div>
+        </section>
 
-      <div class="group-head">
-        <h2>Compulsory Core · Physics, Chemistry, Mathematics &amp; English</h2>
-        <span>2022–2026 Revised MSBSHSE Official Papers</span>
-      </div>
-      <div class="subject-grid">
-        ${core.map(renderStreamCard).join('')}
-      </div>
+        <section class="subjects-section" id="subjectsDirectory">
+          ${resumeHtml}
 
-      <div class="group-head">
-        <h2>Bifocal Electives · 200-Mark Vocational Subjects</h2>
-        <span>Strict stream separation · Complete 2015–2026 Archive</span>
-      </div>
-      <div class="subject-grid">
-        ${elective.map(renderStreamCard).join('')}
-      </div>
+          <div class="group-head">
+            <h2>Compulsory Core · Physics, Chemistry, Mathematics &amp; English</h2>
+            <span>2022–2026 Revised MSBSHSE Official Papers</span>
+          </div>
+          <div class="subject-grid">
+            ${core.map(renderStreamCard).join('')}
+          </div>
+
+          <div class="group-head">
+            <h2>Bifocal Electives · 200-Mark Vocational Subjects</h2>
+            <span>Strict stream separation · 2015–2026 Archive</span>
+          </div>
+          <div class="subject-grid">
+            ${elective.map(renderStreamCard).join('')}
+          </div>
+        </section>
       </div>
     `;
     setTimeout(updateTabIndicators, 15);
@@ -786,11 +867,23 @@
   window.setHeroTab = function (idx) {
     heroTabIdx = idx;
     heroDemoAnswer = null;
+    const box = document.getElementById('heroDemoInner');
+    if (box && typeof window._buildHeroDemoInner === 'function') {
+      box.innerHTML = window._buildHeroDemoInner();
+      setTimeout(updateTabIndicators, 10);
+      return;
+    }
     renderHome();
   };
 
   window.pickHeroOpt = function (idx) {
     heroDemoAnswer = idx;
+    const box = document.getElementById('heroDemoInner');
+    if (box && typeof window._buildHeroDemoInner === 'function') {
+      box.innerHTML = window._buildHeroDemoInner();
+      setTimeout(updateTabIndicators, 10);
+      return;
+    }
     renderHome();
   };
 
@@ -1461,6 +1554,16 @@
     }
 
     const authSection = st.configured ? `
+      <button type="button" class="oauth-btn" onclick="handleGoogleSignIn()">
+        <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        <span>Continue with Google</span>
+      </button>
+      <div class="auth-divider"><span>or with email</span></div>
       <div class="seg-tabs" style="margin-bottom:14px;" role="tablist">
         <div class="seg-ind"></div>
         <button class="seg-tab" role="tab" aria-selected="${syncModeTab === 'signin'}" onclick="syncModeTab='signin';renderSyncModal();">Sign In</button>
@@ -1497,6 +1600,7 @@
       <details ${st.configured ? '' : 'open'} style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);">
         <summary style="cursor:pointer;font-size:13px;font-weight:500;color:var(--ink-2);">Supabase Project Connection</summary>
         <div style="margin-top:12px;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">For Google Sign In, turn on Google under Supabase -> Authentication -> Providers -> Google.</div>
           <div class="field-group">
             <label for="cfgUrl">Supabase URL</label>
             <input id="cfgUrl" type="url" placeholder="https://xxxx.supabase.co" value="${escapeHtml(cfg.url)}" />
@@ -1524,6 +1628,19 @@
     renderSyncModal();
   };
 
+  window.handleGoogleSignIn = async function () {
+    const errBox = document.getElementById('syncErrMsg');
+    if (errBox) errBox.style.display = 'none';
+    try {
+      await window.BoardDeckSync.signInGoogle();
+    } catch (e) {
+      if (errBox) {
+        errBox.textContent = e.message || String(e);
+        errBox.style.display = 'block';
+      }
+    }
+  };
+
   window.handleAuthSubmit = async function () {
     const email = document.getElementById('syncEmail')?.value || '';
     const pass = document.getElementById('syncPass')?.value || '';
@@ -1534,18 +1651,18 @@
     try {
       if (syncModeTab === 'signin') {
         await window.BoardDeckSync.signInPassword(email, pass);
-        showToast('Signed in & synced!', 'ok');
+        showToast('Signed in & progress synced.', 'ok');
       } else if (syncModeTab === 'signup') {
         const res = await window.BoardDeckSync.signUpPassword(email, pass);
         if (res && res.needsConfirmation) {
           if (infoBox) {
-            infoBox.textContent = 'Account created! Check your inbox to verify your email before signing in.';
+            infoBox.textContent = 'Account created. Check your inbox to verify your email before signing in.';
             infoBox.style.display = 'block';
           }
           showToast('Confirmation email sent.', 'ok');
           return;
         }
-        showToast('Account created & synced!', 'ok');
+        showToast('Account created & synced.', 'ok');
       } else {
         await window.BoardDeckSync.sendMagicLink(email);
         if (infoBox) {
@@ -1685,6 +1802,15 @@
   // Boot
   async function boot() {
     applyTheme(state.theme);
+    try {
+      const qs = new URLSearchParams(window.location.search);
+      const hs = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+      const authErr = qs.get('error_description') || hs.get('error_description');
+      if (authErr) {
+        setTimeout(() => showToast(authErr, 'err'), 250);
+        window.history.replaceState({}, document.title, window.location.pathname + '#home');
+      }
+    } catch (_) {}
     if (window.BoardDeckSync) {
       window.BoardDeckSync.onChange(st => {
         syncStatus = st;
