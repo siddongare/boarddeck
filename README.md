@@ -2,7 +2,7 @@
 
 **Live app:** [boardeck.vercel.app](https://boardeck.vercel.app)
 
-BoardDeck is a static, offline-first revision workspace built for Maharashtra State Board (MSBSHSE) Class 12 Science students. Compulsory Science papers (`Physics`, `Chemistry`, `Mathematics`, `English`) and Bifocal electives (`Computer Science D-9`, `Electronics C-2`) stay strictly isolated with their own chapter trees, weightage tables, past papers, review queues, and timed mock exams.
+BoardDeck is a static, offline-first revision workspace built for Maharashtra State Board (MSBSHSE) Class 12 Science students. Compulsory Science papers (`Physics`, `Chemistry`, `Mathematics`, `Biology`, `English`) and Bifocal electives (`Computer Science D-9`, `Electronics C-2`) stay strictly isolated with their own chapter trees, weightage tables, past papers, review queues, and timed mock exams.
 
 ![BoardDeck Home & Subject Switcher](assets/home.png)
 
@@ -10,13 +10,14 @@ BoardDeck is a static, offline-first revision workspace built for Maharashtra St
 
 Preparing for Maharashtra HSC Class 12 boards usually means juggling scattered PDFs, broken textbook-back links, and solutions that spoil the answer before you even attempt the question. I built BoardDeck for myself and my classmates so every chapter-mapped PYQ, repeat frequency flag, and 3-hour mock paper lives in one fast workspace that works on both laptop and phone without losing progress.
 
-## Covered Subjects (2,866 Questions · 1,034 Repeat Flags)
+## Covered Subjects (3,400 Questions · 1,060 Repeat Flags)
 
 | Group | Subject | Code | Coverage | Count |
 | --- | --- | --- | --- | --- |
 | Core | Physics | `54` | 2022–2026 Revised Syllabus · 8 papers | 442 Qs |
 | Core | Chemistry | `55` | 2022–2026 Revised Syllabus · 8 papers | 581 Qs |
 | Core | Mathematics & Statistics | `40` | 2022–2026 Revised Syllabus · 8 papers | 357 Qs |
+| Core | Biology | `56` | 2022–2026 Revised Syllabus · 8 papers | 534 Qs |
 | Core | English | `01` | Prose, Poetry, Writing Skills (`Q.4`), Novel | 267 Qs |
 | Bifocal | Computer Science | `D-9` | 2015–2026 structured + scan links | 963 Qs |
 | Bifocal | Electronics | `C-2` | Applied & Digital Electronics · SVG circuits | 256 Qs |

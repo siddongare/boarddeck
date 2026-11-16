@@ -865,7 +865,7 @@
                 <span>Maharashtra HSC · Class 12 Science &amp; Bifocal</span>
               </div>
               <h1 data-enter="2">HSC boards, engineered to the mark.</h1>
-              <p data-enter="3">Chapter-mapped PYQs, verified repeat patterns, and 3-hour timed mocks across six isolated exam streams.</p>
+              <p data-enter="3">Chapter-mapped PYQs, verified repeat patterns, and 3-hour timed mocks across ${MANIFEST.streams.length} isolated exam streams.</p>
               <div class="hero-cta-row" data-enter="4">
                 <button class="btn primary" onclick="document.getElementById('subjectsDirectory')?.scrollIntoView({behavior:'smooth'})">Explore Subjects ${ICONS.arrow}</button>
                 <button class="btn" onclick="openSyncModal()">${ICONS.cloud} ${syncStatus.user ? 'Cloud Synced' : 'Sign In & Sync'}</button>
@@ -928,7 +928,7 @@
                       <div class="gauge-val mono">${masteredPct}%</div>
                     </div>
                     <div class="gauge-meta">
-                      <div class="gauge-row"><span>Core PCM+Eng</span><strong class="mono">${coreQCount}</strong></div>
+                      <div class="gauge-row"><span>Core PCMB+Eng</span><strong class="mono">${coreQCount}</strong></div>
                       <div class="gauge-row"><span>Bifocal CS/EL</span><strong class="mono">${elecQCount}</strong></div>
                     </div>
                   </div>
