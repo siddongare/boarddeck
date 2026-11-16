@@ -980,6 +980,16 @@
 
   window.pickHeroOpt = function (idx) {
     heroDemoAnswer = idx;
+    const sample = HERO_SAMPLES[heroTabIdx] || HERO_SAMPLES[0];
+    if (sample && typeof sample.correct === 'number') {
+      if (idx === sample.correct) {
+        mcqStreak += 1;
+        setMascot(mcqStreak >= 3 ? 'hype' : 'happy', mcqStreak >= 3 ? `Streak x${mcqStreak}! Clean.` : 'Clean! Official key matched.');
+      } else {
+        mcqStreak = 0;
+        setMascot('sad', 'Close — check the explanation below.');
+      }
+    }
     const box = document.getElementById('heroDemoInner');
     if (box && typeof window._buildHeroDemoInner === 'function') {
       box.innerHTML = window._buildHeroDemoInner();
@@ -1443,12 +1453,14 @@
       renderSidebar();
       renderHome();
       updateMobileBottomNav();
+      syncMascotToView();
       return;
     }
     destroyHomeGlass();
     shell.classList.remove('is-home');
     renderSidebar();
     updateMobileBottomNav();
+    syncMascotToView();
     if (!ACTIVE_STREAM) return;
     if (view === 'overview') renderOverview();
     else if (view === 'chapter') renderChapter();
@@ -1482,6 +1494,15 @@
         state.mastery[uid] = optIdx === q.correct_idx ? 'mastered' : 'review';
       }
     }
+    if (q.correct_idx >= 0) {
+      if (optIdx === q.correct_idx) {
+        mcqStreak += 1;
+        setMascot(mcqStreak >= 3 ? 'hype' : 'happy', mcqStreak >= 3 ? `Streak x${mcqStreak}! Keep rolling.` : 'Clean! Official key matched.');
+      } else {
+        mcqStreak = 0;
+        setMascot('sad', isMock ? 'Keep moving — review after mock.' : 'Marked for review — check the steps.');
+      }
+    }
     saveState();
     render();
   };
@@ -1497,8 +1518,11 @@
   };
 
   window.setMastery = function (uid, val) {
-    state.mastery[uid] = state.mastery[uid] === val ? '' : val;
+    const next = state.mastery[uid] === val ? '' : val;
+    state.mastery[uid] = next;
     if (!state.mastery[uid]) delete state.mastery[uid];
+    if (next === 'mastered') setMascot('happy', 'Locked in! Onto the next one.');
+    else if (next === 'review') setMascot('sad', 'Queued for another pass.');
     saveState();
     render();
   };
@@ -1926,8 +1950,85 @@
     }
   });
 
+  // Airi Mascot Companion
+  const MASCOT_POSES = {
+    idle: 'idle',
+    happy: 'happy',
+    sad: 'sad',
+    hype: 'hype',
+    focus: 'focus',
+    sleepy: 'sleepy'
+  };
+  let mcqStreak = 0;
+  let mascotResetTimer = null;
+  let mascotPreloaded = false;
+
+  function getRestingMascot() {
+    if (view === 'mock') return ['focus', 'Mock lock-in. Headphones on.'];
+    const hr = new Date().getHours();
+    if (hr >= 23 || hr < 5) return ['sleepy', 'Late-night grind? Pace yourself.'];
+    return ['idle', 'Ready when you are.'];
+  }
+
+  function setMascot(poseKey, line, persist = false) {
+    const img = document.getElementById('mascotImg');
+    const lineEl = document.getElementById('mascotLine');
+    if (!img) return;
+    const pose = MASCOT_POSES[poseKey] || 'idle';
+    const nextSrc = `assets/mascot/${pose}.webp`;
+    if (!img.getAttribute('src')?.endsWith(`${pose}.webp`)) {
+      img.src = nextSrc;
+    }
+    if (lineEl && line) lineEl.textContent = line;
+    img.classList.remove('is-reacting');
+    void img.offsetWidth;
+    img.classList.add('is-reacting');
+    clearTimeout(mascotResetTimer);
+    if (!persist) {
+      mascotResetTimer = setTimeout(() => {
+        mascotResetTimer = null;
+        const [restPose, restLine] = getRestingMascot();
+        setMascot(restPose, restLine, true);
+      }, 3400);
+    }
+  }
+
+  function syncMascotToView() {
+    if (mascotResetTimer) return;
+    const [restPose, restLine] = getRestingMascot();
+    const img = document.getElementById('mascotImg');
+    const lineEl = document.getElementById('mascotLine');
+    if (img && !img.getAttribute('src')?.endsWith(`${restPose}.webp`)) {
+      img.src = `assets/mascot/${restPose}.webp`;
+    }
+    if (lineEl && !lineEl.dataset.locked) lineEl.textContent = restLine;
+  }
+
+  function preloadMascotPoses() {
+    if (mascotPreloaded) return;
+    if (!window.matchMedia('(min-width: 901px)').matches) return;
+    mascotPreloaded = true;
+    Object.values(MASCOT_POSES).forEach((pose) => {
+      const i = new Image();
+      i.src = `assets/mascot/${pose}.webp`;
+    });
+  }
+
+  window.toggleMascotDock = function (minimized) {
+    const dock = document.getElementById('mascotDock');
+    if (!dock) return;
+    dock.classList.toggle('is-minimized', !!minimized);
+    try { localStorage.setItem('boarddeck_mascot_min', minimized ? '1' : '0'); } catch (_) {}
+  };
+
   // Boot
   async function boot() {
+    try {
+      if (localStorage.getItem('boarddeck_mascot_min') === '1') {
+        document.getElementById('mascotDock')?.classList.add('is-minimized');
+      }
+    } catch (_) {}
+    setTimeout(preloadMascotPoses, 700);
     applyTheme(state.theme);
     try {
       const qs = new URLSearchParams(window.location.search);

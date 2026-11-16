@@ -114,6 +114,22 @@
     </div>
   </div>
 
+  <aside class="mascot-dock" id="mascotDock" aria-label="Airi study companion">
+    <button type="button" class="mascot-restore" id="mascotRestore" onclick="toggleMascotDock(false)" title="Show Airi">
+      <span class="brand-dot"></span> Airi
+    </button>
+    <div class="mascot-card" id="mascotCard">
+      <div class="mascot-bubble" id="mascotBubble">
+        <span class="mascot-name">Airi</span>
+        <span class="mascot-line" id="mascotLine">Ready when you are.</span>
+      </div>
+      <div class="mascot-stage">
+        <img id="mascotImg" src="assets/mascot/idle.webp" alt="Airi, BoardDeck study mascot" width="128" height="128" loading="lazy" decoding="async" />
+      </div>
+      <button type="button" class="mascot-min" onclick="toggleMascotDock(true)" title="Minimize Airi" aria-label="Minimize Airi">×</button>
+    </div>
+  </aside>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
