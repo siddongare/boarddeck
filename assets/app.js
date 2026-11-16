@@ -878,52 +878,59 @@
               </div>
             </div>
 
-            <div class="hero-bento" data-enter="3">
-              <div class="hero-demo" data-liquid-ignore>
-                <div class="hero-demo-glass" aria-hidden="true"></div>
-                <div class="hero-demo-inner tex2jax_ignore" id="heroDemoInner">
-                  ${buildHeroDemoInner()}
-                </div>
+            <div class="hero-right-stage" data-enter="3">
+              <div class="hero-airi-wrap" aria-hidden="true">
+                <div class="hero-airi-glow"></div>
+                <img src="assets/mascot/hero-airi.webp" class="hero-airi-img" alt="Airi — BoardDeck Mascot" width="467" height="1100" decoding="async" />
               </div>
 
-              <div class="bento-tile bento-lime">
-                <div class="bento-head">
-                  <span class="bento-kicker">Repeat Density</span>
-                  <span class="bento-pill-dark mono">${repeatTotal} FLAGS</span>
-                </div>
-                <div>
-                  <div class="bento-big mono">${repeatPct}%</div>
-                  <div class="bento-sub">${totalQs.toLocaleString()} archived MSBSHSE PYQs</div>
-                </div>
-                <div class="bento-bars">
-                  ${MANIFEST.streams.map((st) => {
-                    const h = Math.max(22, Math.round((100 * st.questionCount) / maxQ));
-                    return `
-                      <button type="button" class="bento-bar-btn" onclick="openStream('${st.id}','overview')" title="${escapeHtml(st.name)} (${st.questionCount} PYQs)">
-                        <span class="bento-bar-track"><span class="bento-bar-fill" style="height:${h}%"></span></span>
-                        <span>${escapeHtml(st.short.slice(0, 3).toUpperCase())}</span>
-                      </button>
-                    `;
-                  }).join('')}
-                </div>
-              </div>
-
-              <div class="bento-tile bento-gauge">
-                <div class="bento-head">
-                  <span class="bento-kicker" style="color:var(--muted);">Syllabus Mastery</span>
-                  <span class="tag mono">${masteredTotal}/${totalQs}</span>
-                </div>
-                <div class="bento-gauge-body">
-                  <div class="gauge-ring">
-                    <svg viewBox="0 0 66 66">
-                      <circle class="gauge-ring-bg" cx="33" cy="33" r="26"></circle>
-                      <circle class="gauge-ring-fg" cx="33" cy="33" r="26" stroke-dasharray="${circumference.toFixed(1)}" stroke-dashoffset="${strokeDashoffset}"></circle>
-                    </svg>
-                    <div class="gauge-val mono">${masteredPct}%</div>
+              <div class="hero-bento">
+                <div class="hero-demo" data-liquid-ignore>
+                  <div class="hero-demo-glass" aria-hidden="true"></div>
+                  <div class="hero-demo-inner tex2jax_ignore" id="heroDemoInner">
+                    ${buildHeroDemoInner()}
                   </div>
-                  <div class="gauge-meta">
-                    <div class="gauge-row"><span>Core PCM+Eng</span><strong class="mono">${coreQCount}</strong></div>
-                    <div class="gauge-row"><span>Bifocal CS/EL</span><strong class="mono">${elecQCount}</strong></div>
+                </div>
+
+                <div class="bento-tile bento-lime">
+                  <div class="bento-head">
+                    <span class="bento-kicker">Repeat Density</span>
+                    <span class="bento-pill-dark mono">${repeatTotal} FLAGS</span>
+                  </div>
+                  <div>
+                    <div class="bento-big mono">${repeatPct}%</div>
+                    <div class="bento-sub">${totalQs.toLocaleString()} archived MSBSHSE PYQs</div>
+                  </div>
+                  <div class="bento-bars">
+                    ${MANIFEST.streams.map((st) => {
+                      const h = Math.max(22, Math.round((100 * st.questionCount) / maxQ));
+                      return `
+                        <button type="button" class="bento-bar-btn" onclick="openStream('${st.id}','overview')" title="${escapeHtml(st.name)} (${st.questionCount} PYQs)">
+                          <span class="bento-bar-track"><span class="bento-bar-fill" style="height:${h}%"></span></span>
+                          <span>${escapeHtml(st.short.slice(0, 3).toUpperCase())}</span>
+                        </button>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+
+                <div class="bento-tile bento-gauge">
+                  <div class="bento-head">
+                    <span class="bento-kicker" style="color:var(--muted);">Syllabus Mastery</span>
+                    <span class="tag mono">${masteredTotal}/${totalQs}</span>
+                  </div>
+                  <div class="bento-gauge-body">
+                    <div class="gauge-ring">
+                      <svg viewBox="0 0 66 66">
+                        <circle class="gauge-ring-bg" cx="33" cy="33" r="26"></circle>
+                        <circle class="gauge-ring-fg" cx="33" cy="33" r="26" stroke-dasharray="${circumference.toFixed(1)}" stroke-dashoffset="${strokeDashoffset}"></circle>
+                      </svg>
+                      <div class="gauge-val mono">${masteredPct}%</div>
+                    </div>
+                    <div class="gauge-meta">
+                      <div class="gauge-row"><span>Core PCM+Eng</span><strong class="mono">${coreQCount}</strong></div>
+                      <div class="gauge-row"><span>Bifocal CS/EL</span><strong class="mono">${elecQCount}</strong></div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1959,19 +1966,69 @@
     focus: 'focus',
     sleepy: 'sleepy'
   };
+  const MASCOT_LINES = {
+    idle: [
+      'Ready when you are.',
+      'Checking your repeat flags?',
+      '2026 March papers are live.',
+      'Pick a chapter and lock in.',
+      'Consistency beats last-night cramming.'
+    ],
+    happy: [
+      'Clean! Official key matched.',
+      'Locked in. Keep that pace.',
+      'Board-ready answer.',
+      'Too easy for you.'
+    ],
+    sad: [
+      'Happens — check the official steps.',
+      'Flagged for review. You will get it next pass.',
+      'Double-check units and signs first.',
+      'Better to miss it here than in the exam.'
+    ],
+    hype: [
+      'On fire! Keep that streak alive.',
+      'Zero misses right now.',
+      'Board topper pace. Keep rolling.'
+    ],
+    focus: [
+      'Mock lock-in. Eyes on the paper.',
+      'Pace yourself — 3 hours total.',
+      'Secure the easy 1-markers first.'
+    ],
+    sleepy: [
+      'Past midnight — hydrate and pace yourself.',
+      'One last chapter, then get real sleep.',
+      'Late-night grind mode active.'
+    ],
+    tips: [
+      'Press R to toggle solutions without touching the mouse.',
+      'Use J and K to jump between question cards fast.',
+      'Hit Ctrl+K anytime to jump straight to any chapter.',
+      'Questions asked 2x+ carry the highest board ROI.',
+      'Section A 1-markers lock in 18 free marks if you drill them.'
+    ]
+  };
   let mcqStreak = 0;
   let mascotResetTimer = null;
   let mascotPreloaded = false;
 
+  function pickLine(poolKey, fallback) {
+    const arr = MASCOT_LINES[poolKey];
+    if (!arr || !arr.length) return fallback || 'Ready when you are.';
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
   function getRestingMascot() {
-    if (view === 'mock') return ['focus', 'Mock lock-in. Headphones on.'];
+    if (view === 'mock') return ['focus', pickLine('focus')];
     const hr = new Date().getHours();
-    if (hr >= 23 || hr < 5) return ['sleepy', 'Late-night grind? Pace yourself.'];
-    return ['idle', 'Ready when you are.'];
+    if (hr >= 23 || hr < 5) return ['sleepy', pickLine('sleepy')];
+    return ['idle', pickLine('idle')];
   }
 
   function setMascot(poseKey, line, persist = false) {
     const img = document.getElementById('mascotImg');
+    const avatarBtn = document.getElementById('mascotAvatarBtn');
     const lineEl = document.getElementById('mascotLine');
     if (!img) return;
     const pose = MASCOT_POSES[poseKey] || 'idle';
@@ -1979,19 +2036,27 @@
     if (!img.getAttribute('src')?.endsWith(`${pose}.webp`)) {
       img.src = nextSrc;
     }
-    if (lineEl && line) lineEl.textContent = line;
-    img.classList.remove('is-reacting');
-    void img.offsetWidth;
-    img.classList.add('is-reacting');
+    if (lineEl) lineEl.textContent = line || pickLine(pose);
+    if (avatarBtn) {
+      avatarBtn.classList.remove('is-reacting');
+      void avatarBtn.offsetWidth;
+      avatarBtn.classList.add('is-reacting');
+    }
     clearTimeout(mascotResetTimer);
     if (!persist) {
       mascotResetTimer = setTimeout(() => {
         mascotResetTimer = null;
         const [restPose, restLine] = getRestingMascot();
         setMascot(restPose, restLine, true);
-      }, 3400);
+      }, 3600);
     }
   }
+
+  window.nudgeMascot = function () {
+    const poses = ['idle', 'happy', 'hype'];
+    const p = poses[Math.floor(Math.random() * poses.length)];
+    setMascot(p, pickLine('tips'));
+  };
 
   function syncMascotToView() {
     if (mascotResetTimer) return;
